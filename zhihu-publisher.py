@@ -11,7 +11,7 @@ import chardet
 import functools
 
 from PIL import Image
-from pathlib2 import Path
+from pathlib import Path
 from shutil import copyfile
 
 ###############################################################################################################
