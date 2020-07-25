@@ -1,521 +1,641 @@
-# 斯坦福CS229
+# 机器学习入门
 
 
-# 课程笔记第一章（一）
+# 斯坦福CS229课程笔记第一章（二）
 
-## 监督学习（Supervised learning）
+### 第二部分 分类和逻辑回归（Classification and logistic regression）
 
-**定义：**根据已有的数据集，知道输入和输出结果之间的关系。根据这种已知的关系，训练得到一个最优的模型。在监督学习中训练数据既有特征(feature)又有标签(label)，通过训练，让机器可以自己找到特征和标签之间的联系，在面对只有特征没有标签的数据时，可以判断出标签，也就是完成测试。
+接下来讲一下分类的问题。分类问题其实和回归问题很像，只不过我们现在要来预测的  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的值只局限于若干个离散值。首先关注的是最简单的**二元分类** 问题，也就是说咱们  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  只有两个取值， <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  或者  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> 。（这里谈到的大部分内容也都可以扩展到多种类的情况。）例如，假如要建立一个垃圾邮件筛选器，那么就可以用  <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1">  表示一个邮件中的若干特征，然后如果这个邮件是垃圾邮件， <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  就设为 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> ，否则  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  为  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1"> 。 <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  也可以被称为**消极类别（negative class）**，而  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1">  就成为**积极类别（positive class**），有的情况下也分别表示成“-” 和 “+”。对于给定的一个  <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1"> ，对应的 <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1"> 也称为训练样本的**标签（label）**。
 
-房价预测是使用监督学习来解决问题的一个实例。假如有这样一个数据集，里面的数据是俄勒冈州波特兰市的  <img src="https://www.zhihu.com/equation?tex=47" alt="47" class="ee_img tr_noresize" eeimg="1">  套房屋的面积和价格，如下表所示：
+在解决分类问题是，之前的线性回归往往很难得到理想的效果，此时就需要我们使用一些更为复杂的算法。
 
-| 居住面积（平方英尺） | 价格（千美元） |
+#### 5 逻辑回归（Logistic regression）
 
-| :------------------: | :------------: |
+逻辑回归可能是分类问题中最为常见的一个算法，它和logistic函数紧密相关。
 
-|         <img src="https://www.zhihu.com/equation?tex=2104" alt="2104" class="ee_img tr_noresize" eeimg="1">         |      <img src="https://www.zhihu.com/equation?tex=400" alt="400" class="ee_img tr_noresize" eeimg="1">       |
+我们当然也可以还按照之前的线性回归的算法来根据给定的  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  来预测  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1"> ，只要忽略掉  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  是一个散列值就可以了。然而，这样构建的例子很容易遇到性能问题，这个方法运行效率会非常低，效果很差。而且从直观上来看， <img src="https://www.zhihu.com/equation?tex=h_\theta(x)" alt="h_\theta(x)" class="ee_img tr_noresize" eeimg="1">  的值如果大于 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1">  或者小于 <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  都是没有意义的，因为在定义使已指定了  <img src="https://www.zhihu.com/equation?tex=y \in \{0, 1\}" alt="y \in \{0, 1\}" class="ee_img tr_noresize" eeimg="1"> ，就是说  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  必然应当是  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1">  这两个值当中的一个。
 
-|         <img src="https://www.zhihu.com/equation?tex=1600" alt="1600" class="ee_img tr_noresize" eeimg="1">         |      <img src="https://www.zhihu.com/equation?tex=330" alt="330" class="ee_img tr_noresize" eeimg="1">       |
-
-|         <img src="https://www.zhihu.com/equation?tex=2400" alt="2400" class="ee_img tr_noresize" eeimg="1">         |      <img src="https://www.zhihu.com/equation?tex=369" alt="369" class="ee_img tr_noresize" eeimg="1">       |
-
-|         <img src="https://www.zhihu.com/equation?tex=1416" alt="1416" class="ee_img tr_noresize" eeimg="1">         |      <img src="https://www.zhihu.com/equation?tex=232" alt="232" class="ee_img tr_noresize" eeimg="1">       |
-
-|         <img src="https://www.zhihu.com/equation?tex=3000" alt="3000" class="ee_img tr_noresize" eeimg="1">         |      <img src="https://www.zhihu.com/equation?tex=540" alt="540" class="ee_img tr_noresize" eeimg="1">       |
+所以我们就改变一下假设函数 <img src="https://www.zhihu.com/equation?tex=h_\theta (x)" alt="h_\theta (x)" class="ee_img tr_noresize" eeimg="1">  的形式来解决这个问题。在逻辑回归中选择如下的函数：
 
 
-将这些数据投影成图，方便进一步的分析：
-
-<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f1.png" alt="cs229note1f1" style="zoom:67%;" />
-
-取得这样的数据，我们要学会根据波特兰其他房屋的居住面积，预测这些房屋的价格。
-
-首先先规范一下符号和含义，这些符号以后还会用到，假设  <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1">  表示 “输入的” 变量值（在这个例子中就是房屋面积），也可以叫做**输入特征**；用  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  来表示“输出值”，称之为**目标变量**，在这个例子里面就是房屋价格。这样的一对  <img src="https://www.zhihu.com/equation?tex=(x^{(i)},y^{(i)})" alt="(x^{(i)},y^{(i)})" class="ee_img tr_noresize" eeimg="1"> 就称为一组训练样本，作为机器进行学习的数据集，也就是一个长度为  <img src="https://www.zhihu.com/equation?tex=m" alt="m" class="ee_img tr_noresize" eeimg="1">  的训练样本的列表 <img src="https://www.zhihu.com/equation?tex=\{(x^{(i)},y^{(i)}); i = 1,\dots ,m\}" alt="\{(x^{(i)},y^{(i)}); i = 1,\dots ,m\}" class="ee_img tr_noresize" eeimg="1"> 。这里的上标 <img src="https://www.zhihu.com/equation?tex=(i)" alt="(i)" class="ee_img tr_noresize" eeimg="1"> 只是作为训练集的索引记号，大写的 <img src="https://www.zhihu.com/equation?tex=X" alt="X" class="ee_img tr_noresize" eeimg="1"> 来表示 输入值的空间，大写的 <img src="https://www.zhihu.com/equation?tex=Y" alt="Y" class="ee_img tr_noresize" eeimg="1"> 表示输出值的空间。在本节的这个例子中，输入输出的空间都是实数域，所以  <img src="https://www.zhihu.com/equation?tex=X = Y = R" alt="X = Y = R" class="ee_img tr_noresize" eeimg="1"> 。
-
-然后再用更加规范的方式来描述一下监督学习问题，我们的目标是，给定一个训练集，来让机器学习一个函数  <img src="https://www.zhihu.com/equation?tex=h: X → Y" alt="h: X → Y" class="ee_img tr_noresize" eeimg="1"> ，理想的结果是 <img src="https://www.zhihu.com/equation?tex=h(x)" alt="h(x)" class="ee_img tr_noresize" eeimg="1">  是一个与真实  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  值比较接近的评估值（预测值）。这个函数  <img src="https://www.zhihu.com/equation?tex=h" alt="h" class="ee_img tr_noresize" eeimg="1">  又被称为**假设（hypothesis）**。用一个图来表示的话，这个过程大概就是下面这样：
-
-![](https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f2-1595488003652.png)
-
-如果我们要预测的目标变量是连续的，这种学习问题就被称为**回归问题**，比如当前这个房屋价格-面积的案例，如果 <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1"> 只能取一小部分的离散的值（比如给定房屋面积，咱们要来确定这个房子是一个住宅还是公寓），这样的问题就叫做**分类问题。**分类问题的输出是有限的K个标签，而回归问题的输出是连续的值。
-
-
-### 第一部分 线性回归
-
-为了让我们的房屋案例更有意思，可以稍微对数据集进行一下补充，增加每一个房屋的卧室数目，进行更复杂的回归分析，具体数据如下表所示：
-
-|居住面积（平方英尺）|卧室数目|价格（千美元）|
-
-|:-:|:-:|:-:|
-
-| <img src="https://www.zhihu.com/equation?tex=2104" alt="2104" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=3" alt="3" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=400" alt="400" class="ee_img tr_noresize" eeimg="1"> |
-
-| <img src="https://www.zhihu.com/equation?tex=1600" alt="1600" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=3" alt="3" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=330" alt="330" class="ee_img tr_noresize" eeimg="1"> |
-
-| <img src="https://www.zhihu.com/equation?tex=2400" alt="2400" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=3" alt="3" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=369" alt="369" class="ee_img tr_noresize" eeimg="1"> |
-
-| <img src="https://www.zhihu.com/equation?tex=1416" alt="1416" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=2" alt="2" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=232" alt="232" class="ee_img tr_noresize" eeimg="1"> |
-
-| <img src="https://www.zhihu.com/equation?tex=3000" alt="3000" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=4" alt="4" class="ee_img tr_noresize" eeimg="1"> | <img src="https://www.zhihu.com/equation?tex=540" alt="540" class="ee_img tr_noresize" eeimg="1"> |
-
-| <img src="https://www.zhihu.com/equation?tex=\vdots" alt="\vdots" class="ee_img tr_noresize" eeimg="1">  | <img src="https://www.zhihu.com/equation?tex=\vdots" alt="\vdots" class="ee_img tr_noresize" eeimg="1">  | <img src="https://www.zhihu.com/equation?tex=\vdots" alt="\vdots" class="ee_img tr_noresize" eeimg="1">  |
-
-
-现在，输入特征  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  就是在  <img src="https://www.zhihu.com/equation?tex=R^2" alt="R^2" class="ee_img tr_noresize" eeimg="1">  范围取值的一个二维向量了。  <img src="https://www.zhihu.com/equation?tex=x_1^{(i)}" alt="x_1^{(i)}" class="ee_img tr_noresize" eeimg="1">  就是训练集中第  <img src="https://www.zhihu.com/equation?tex=i" alt="i" class="ee_img tr_noresize" eeimg="1">  个房屋的面积，而  <img src="https://www.zhihu.com/equation?tex=x_2^{(i)}" alt="x_2^{(i)}" class="ee_img tr_noresize" eeimg="1">   就是训练集中第  <img src="https://www.zhihu.com/equation?tex=i" alt="i" class="ee_img tr_noresize" eeimg="1">  个房屋的卧室数目。（通常来说，设计一个学习算法的时候，选择哪些输入特征都取决于你，所以如果你不在波特兰收集房屋信息数据，你也完全可以选择包含其他的特征，例如房屋是否有壁炉，卫生间的数量等等。机器学习的一个重要的内容就是数据的预处理和特征的提取，如何从所给数据集中选出合适的特征参与训练，是我们在学习任务中首要思考的东西。关于特征筛选的内容会在后面给出，此处不再赘述。）
-
-要进行监督学习，首先要确定好如何在计算机里面对**函数/假设**  <img src="https://www.zhihu.com/equation?tex=h" alt="h" class="ee_img tr_noresize" eeimg="1">  进行表示。首先可以以线性函数为例进行学习，把  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  假设为一个以  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  为变量的线性函数：
-
-
-<img src="https://www.zhihu.com/equation?tex=h_\theta  (x) = \theta_0 + \theta_1 \times x_1 + \theta_2 \times x_2
-" alt="h_\theta  (x) = \theta_0 + \theta_1 \times x_1 + \theta_2 \times x_2
+<img src="https://www.zhihu.com/equation?tex=h_\theta(x) = g(\theta^T x) = \frac  1{1+e^{-\theta^Tx}}
+" alt="h_\theta(x) = g(\theta^T x) = \frac  1{1+e^{-\theta^Tx}}
 " class="ee_img tr_noresize" eeimg="1">
 
-这里的 <img src="https://www.zhihu.com/equation?tex=\theta_i" alt="\theta_i" class="ee_img tr_noresize" eeimg="1"> 是**参数**（也可以叫做**权重**），是从  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  到  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的线性函数映射的空间参数。在不至于引起混淆的情况下，可以把 <img src="https://www.zhihu.com/equation?tex=h_\theta(x)" alt="h_\theta(x)" class="ee_img tr_noresize" eeimg="1">  里面的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">   省略掉，就简写成  <img src="https://www.zhihu.com/equation?tex=h(x)" alt="h(x)" class="ee_img tr_noresize" eeimg="1"> 。另外为了简化公式，可以设  <img src="https://www.zhihu.com/equation?tex=x_0 = 1" alt="x_0 = 1" class="ee_img tr_noresize" eeimg="1"> （这个为 **截距项 intercept term**）。这样简化之后就有了：
+其中有：
 
 
-<img src="https://www.zhihu.com/equation?tex=h(x) = \sum^n_{i=0}  \theta_i x_i = \theta^T x
-" alt="h(x) = \sum^n_{i=0}  \theta_i x_i = \theta^T x
+<img src="https://www.zhihu.com/equation?tex=g(z)= \frac 1 {1+e^{-z}}
+" alt="g(z)= \frac 1 {1+e^{-z}}
 " class="ee_img tr_noresize" eeimg="1">
 
-等式最右边的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  都是向量，等式中的  <img src="https://www.zhihu.com/equation?tex=n" alt="n" class="ee_img tr_noresize" eeimg="1">  是输入变量的个数（不包括 <img src="https://www.zhihu.com/equation?tex=x_0" alt="x_0" class="ee_img tr_noresize" eeimg="1"> ）。
+这个函数叫做**逻辑函数 （Logistic function）** ，或者也叫**双弯曲S型函数（sigmoid function**）。下图是  <img src="https://www.zhihu.com/equation?tex=g(z)" alt="g(z)" class="ee_img tr_noresize" eeimg="1">  的函数图像：
 
-现在，给定了一个训练集，咱们怎么来挑选/学习参数  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  呢？一个看上去比较合理的方法就是让  <img src="https://www.zhihu.com/equation?tex=h(x)" alt="h(x)" class="ee_img tr_noresize" eeimg="1">  尽量逼近  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1"> ，至少对咱已有的训练样本能适用。用公式的方式来表示的话，就要定义一个函数，来衡量对于每个不同的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  值， <img src="https://www.zhihu.com/equation?tex=h(x^{(i)})" alt="h(x^{(i)})" class="ee_img tr_noresize" eeimg="1">  与对应的  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  的距离。这样用如下的方式定义了一个 **成本函数 （cost function**）:
+<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f6.png" alt="cs229note1f6" style="zoom:48%;" />
 
+当 <img src="https://www.zhihu.com/equation?tex=z\to +\infty" alt="z\to +\infty" class="ee_img tr_noresize" eeimg="1">   的时候  <img src="https://www.zhihu.com/equation?tex=g(z)" alt="g(z)" class="ee_img tr_noresize" eeimg="1">  趋向于 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> ，而当 <img src="https://www.zhihu.com/equation?tex=z\to -\infty" alt="z\to -\infty" class="ee_img tr_noresize" eeimg="1">  时 <img src="https://www.zhihu.com/equation?tex=g(z)" alt="g(z)" class="ee_img tr_noresize" eeimg="1">  趋向于 <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1"> 。此外，这里的这个  <img src="https://www.zhihu.com/equation?tex=g(z)" alt="g(z)" class="ee_img tr_noresize" eeimg="1">  ，也就是  <img src="https://www.zhihu.com/equation?tex=h(x)" alt="h(x)" class="ee_img tr_noresize" eeimg="1"> ，是一直在  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1">  之间波动的。我们依然像之前那样设置  <img src="https://www.zhihu.com/equation?tex=x_0 = 1" alt="x_0 = 1" class="ee_img tr_noresize" eeimg="1"> ，这样就可以使用向量相乘进行表示： <img src="https://www.zhihu.com/equation?tex=\theta^T x =\theta_0 +\sum^n_{j=1}\theta_jx_j" alt="\theta^T x =\theta_0 +\sum^n_{j=1}\theta_jx_j" class="ee_img tr_noresize" eeimg="1"> ·
 
-<img src="https://www.zhihu.com/equation?tex=J(\theta) = \frac 12 \sum^m_{i=1}(h_\theta(x^{(i)})-y^{(i)})^2
-" alt="J(\theta) = \frac 12 \sum^m_{i=1}(h_\theta(x^{(i)})-y^{(i)})^2
-" class="ee_img tr_noresize" eeimg="1">
-
-如果之前你接触过线性回归，你会发现这个函数和**最小二乘法** 拟合模型中的最小二乘法成本函数非常相似。随后我们要引入一个特殊的算法——最小均方算法。
-
-#### 1 最小均方算法（LMS algorithm）
-
-训练过程中，我们希望选择一个能让  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1"> 达到 最小的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  值。如何让  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1"> 达到最小呢？可以先选用一个搜索的算法，从某一个对  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的“初始猜测值”（预设的初值），然后对  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  值不断进行调整，来让  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1">  逐渐变小，最好是直到我们能够达到一个使  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1">  最小的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> 。具体可以考虑使用梯度下降法（gradient descent algorithm）。
-
-梯度下降法就是 <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  从一个预设的的初始值开始，按照下面的公式逐渐重复更新： <img src="https://www.zhihu.com/equation?tex=^1" alt="^1" class="ee_img tr_noresize" eeimg="1"> 
-
-<img src="https://www.zhihu.com/equation?tex=\theta_j := \theta_j - \alpha \frac \partial {\partial\theta_j}J(\theta)
-" alt="\theta_j := \theta_j - \alpha \frac \partial {\partial\theta_j}J(\theta)
-" class="ee_img tr_noresize" eeimg="1">
-
-（上面的这个更新要同时对应从  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  到  <img src="https://www.zhihu.com/equation?tex=n" alt="n" class="ee_img tr_noresize" eeimg="1">  的所有 <img src="https://www.zhihu.com/equation?tex=j" alt="j" class="ee_img tr_noresize" eeimg="1">  值进行。）这里的  <img src="https://www.zhihu.com/equation?tex=\alpha" alt="\alpha" class="ee_img tr_noresize" eeimg="1">  也称为学习速率。这个算法是很自然的，逐步重复朝向  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  降低最快的方向移动。这里 <img src="https://www.zhihu.com/equation?tex=\alpha " alt="\alpha " class="ee_img tr_noresize" eeimg="1"> 的大小选取一定要合适，如果过大会导致错过最低点，如果过小会导致降低速度过于缓慢。
-
->1 本文中  <img src="https://www.zhihu.com/equation?tex=:= " alt=":= " class="ee_img tr_noresize" eeimg="1">  表示的是计算机程序中的一种赋值操作，是把等号右边的计算结果赋值给左边的变量， <img src="https://www.zhihu.com/equation?tex=a := b" alt="a := b" class="ee_img tr_noresize" eeimg="1">  就表示用  <img src="https://www.zhihu.com/equation?tex=b" alt="b" class="ee_img tr_noresize" eeimg="1">  的值覆盖原有的 <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1"> 值。要注意区分，如果写的是  <img src="https://www.zhihu.com/equation?tex=a == b" alt="a == b" class="ee_img tr_noresize" eeimg="1">  则表示的是判断二者相等的关系。（译者注：在 Python 中，单个等号  <img src="https://www.zhihu.com/equation?tex==" alt="=" class="ee_img tr_noresize" eeimg="1">  就是赋值，两个等号  <img src="https://www.zhihu.com/equation?tex===" alt="==" class="ee_img tr_noresize" eeimg="1">   表示相等关系的判断。）
-
-要实现这个算法，需要解决等号右边的导数项。首先来解决只有一组训练样本  <img src="https://www.zhihu.com/equation?tex=(x, y)" alt="(x, y)" class="ee_img tr_noresize" eeimg="1">  的情况，忽略掉等号右边对  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  的求和。公式如下所示，求导后二阶函数变为一阶函数：
+我们把  <img src="https://www.zhihu.com/equation?tex=g" alt="g" class="ee_img tr_noresize" eeimg="1">  作为选定的函数。当然其他的从 <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1"> 到 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> 之间光滑递增的函数也可以使用，后面我们会了解到选择  <img src="https://www.zhihu.com/equation?tex=g" alt="g" class="ee_img tr_noresize" eeimg="1">  的一些原因（涉及广义线性模型 GLMs，那时候还会讲生成学习算法，generative learning algorithms），对这个逻辑函数的选择是很自然的。在继续深入之前，要讲解的关于这个 S 型函数的导数 <img src="https://www.zhihu.com/equation?tex=g'" alt="g'" class="ee_img tr_noresize" eeimg="1">  的一些性质：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-\frac \partial {\partial\theta_j}J(\theta) & = \frac \partial {\partial\theta_j} \frac  12(h_\theta(x)-y)^2\\
-& = 2 \cdot\frac 12(h_\theta(x)-y)\cdot \frac \partial {\partial\theta_j}  (h_\theta(x)-y) \\
-& = (h_\theta(x)-y)\cdot \frac \partial {\partial\theta_j}(\sum^n_{i=0} \theta_ix_i-y) \\
-& = (h_\theta(x)-y) x_j
+g'(z) & = \frac d{dz}\frac 1{1+e^{-z}}\\
+& = \frac  1{(1+e^{-z})^2}(e^{-z})\\
+& = \frac  1{(1+e^{-z})} \cdot (1- \frac 1{(1+e^{-z})})\\
+& = g(z)(1-g(z))\\
 \end{aligned}
 " alt="\begin{aligned}
-\frac \partial {\partial\theta_j}J(\theta) & = \frac \partial {\partial\theta_j} \frac  12(h_\theta(x)-y)^2\\
-& = 2 \cdot\frac 12(h_\theta(x)-y)\cdot \frac \partial {\partial\theta_j}  (h_\theta(x)-y) \\
-& = (h_\theta(x)-y)\cdot \frac \partial {\partial\theta_j}(\sum^n_{i=0} \theta_ix_i-y) \\
-& = (h_\theta(x)-y) x_j
+g'(z) & = \frac d{dz}\frac 1{1+e^{-z}}\\
+& = \frac  1{(1+e^{-z})^2}(e^{-z})\\
+& = \frac  1{(1+e^{-z})} \cdot (1- \frac 1{(1+e^{-z})})\\
+& = g(z)(1-g(z))\\
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-对单个训练样本，更新规则如下所示：
+那么给定了逻辑回归模型后，如何去拟合一个合适的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  呢？我们之前已经看到了在一系列假设的前提下，最小二乘法回归可以通过最大似然估计来推出，那么接下来就给我们的这个分类模型做一系列的统计学假设，然后用最大似然法来拟合参数。
+
+首先假设：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+P(y=1|x;\theta)&=h_{\theta}(x)\\
+P(y=0|x;\theta)&=1- h_{\theta}(x)\\
+\end{aligned}
+" alt="\begin{aligned}
+P(y=1|x;\theta)&=h_{\theta}(x)\\
+P(y=0|x;\theta)&=1- h_{\theta}(x)\\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+更简洁的写法是：
+
+
+<img src="https://www.zhihu.com/equation?tex=p(y|x;\theta)=(h_\theta (x))^y(1- h_\theta (x))^{1-y}
+" alt="p(y|x;\theta)=(h_\theta (x))^y(1- h_\theta (x))^{1-y}
+" class="ee_img tr_noresize" eeimg="1">
+
+假设  <img src="https://www.zhihu.com/equation?tex=m" alt="m" class="ee_img tr_noresize" eeimg="1">  个训练样本都是独立的，那么就可以按如下的方式来写参数的似然函数：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+L(\theta) &= p(\vec{y}| X; \theta)\\
+&= \prod^m_{i=1}  p(y^{(i)}| x^{(i)}; \theta)\\
+&= \prod^m_{i=1} (h_\theta (x^{(i)}))^{y^{(i)}}(1-h_\theta (x^{(i)}))^{1-y^{(i)}} \\
+\end{aligned}
+" alt="\begin{aligned}
+L(\theta) &= p(\vec{y}| X; \theta)\\
+&= \prod^m_{i=1}  p(y^{(i)}| x^{(i)}; \theta)\\
+&= \prod^m_{i=1} (h_\theta (x^{(i)}))^{y^{(i)}}(1-h_\theta (x^{(i)}))^{1-y^{(i)}} \\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+随后采用和之前相似的方法，对 <img src="https://www.zhihu.com/equation?tex=L(\theta)" alt="L(\theta)" class="ee_img tr_noresize" eeimg="1"> 取对数，方便取得最大值：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+l(\theta) &=\log L(\theta) \\
+&= \sum^m_{i=1} (y^{(i)} \log (x^{(i)})+(1-y^{(i)})\log (1-h(x^{(i)})))
+\end{aligned}
+" alt="\begin{aligned}
+l(\theta) &=\log L(\theta) \\
+&= \sum^m_{i=1} (y^{(i)} \log (x^{(i)})+(1-y^{(i)})\log (1-h(x^{(i)})))
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+如何让似然函数取得最大值？就跟之前我们在线性回归的时候用了求导数的方法类似，这次用的是**梯度上升法（gradient ascent）**。还是写成向量的形式，然后进行更新，也就是 <img src="https://www.zhihu.com/equation?tex= \theta := \theta +\alpha \nabla _\theta l(\theta)" alt=" \theta := \theta +\alpha \nabla _\theta l(\theta)" class="ee_img tr_noresize" eeimg="1">  。 `(注意更新方程中用的是加号而不是减号，因为我们现在是在找一个函数的最大值，而不是找最小值了，梯度下降和梯度上升的本质是一样的。)` 还是先从只有一组训练样本 <img src="https://www.zhihu.com/equation?tex=(x,y)" alt="(x,y)" class="ee_img tr_noresize" eeimg="1">  来开始，然后求导数来推出随机梯度上升规则：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+\frac  {\partial}{\partial \theta_j} l(\theta) &=(y\frac  1 {g(\theta ^T x)}  - (1-y)\frac  1 {1- g(\theta ^T x)}   )\frac  {\partial}{\partial \theta_j}g(\theta ^Tx) \\
+&= (y\frac  1 {g(\theta ^T x)}  - (1-y)\frac  1 {1- g(\theta ^T x)}   )  g(\theta^Tx)(1-g(\theta^Tx)) \frac  {\partial}{\partial \theta_j}\theta ^Tx \\
+&= (y(1-g(\theta^Tx) ) -(1-y) g(\theta^Tx)) x_j\\
+&= (y-h_\theta(x))x_j
+\end{aligned}
+" alt="\begin{aligned}
+\frac  {\partial}{\partial \theta_j} l(\theta) &=(y\frac  1 {g(\theta ^T x)}  - (1-y)\frac  1 {1- g(\theta ^T x)}   )\frac  {\partial}{\partial \theta_j}g(\theta ^Tx) \\
+&= (y\frac  1 {g(\theta ^T x)}  - (1-y)\frac  1 {1- g(\theta ^T x)}   )  g(\theta^Tx)(1-g(\theta^Tx)) \frac  {\partial}{\partial \theta_j}\theta ^Tx \\
+&= (y(1-g(\theta^Tx) ) -(1-y) g(\theta^Tx)) x_j\\
+&= (y-h_\theta(x))x_j
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+上面的式子里，我们用到了对函数求导的定理  <img src="https://www.zhihu.com/equation?tex= g'(z)= g(z)(1-g(z))" alt=" g'(z)= g(z)(1-g(z))" class="ee_img tr_noresize" eeimg="1">   。然后就得到了随机梯度上升规则：
 
 
 <img src="https://www.zhihu.com/equation?tex=\theta_j := \theta_j + \alpha (y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}
 " alt="\theta_j := \theta_j + \alpha (y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}
 " class="ee_img tr_noresize" eeimg="1">
 
-这个规则也叫 **LMS** 更新规则 （LMS 是 “least mean squares” 的缩写，意思是最小均方），也被称为 **Widrow-Hoff** 学习规则。这个规则有几个自然直观的特性。例如，更新的大小与 <img src="https://www.zhihu.com/equation?tex=(y^{(i)} − h_\theta(x^{(i)}))" alt="(y^{(i)} − h_\theta(x^{(i)}))" class="ee_img tr_noresize" eeimg="1"> 成正比；另外，当我们遇到训练样本的预测值与  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  的真实值非常接近的情况下，就会发现基本没必要再对参数进行修改了；与此相反的情况是，如果我们的预测值  <img src="https://www.zhihu.com/equation?tex=h_\theta(x^{(i)})" alt="h_\theta(x^{(i)})" class="ee_img tr_noresize" eeimg="1">  与  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  的真实值有很大的误差（比如距离特别远），那就需要对参数进行更大地调整。
+和之前的 LMS 更新规则相对比，发现看上去挺相似的，但它们并不是同一个算法，因为这里的 <img src="https://www.zhihu.com/equation?tex=h_\theta(x^{(i)})" alt="h_\theta(x^{(i)})" class="ee_img tr_noresize" eeimg="1"> 现在定义成了一个  <img src="https://www.zhihu.com/equation?tex=\theta^Tx^{(i)}" alt="\theta^Tx^{(i)}" class="ee_img tr_noresize" eeimg="1">   的非线性函数。尽管如此，我们面对不同的学习问题使用了不同的算法，却得到了看上去一样的更新规则，这个还是有点让人吃惊。这是一个巧合么，还是背后有更深层次的原因呢？在我们学到了 GLM 广义线性模型的时候就会得到答案了。需要注意的是，上面的这些算法都不局部优化，而是全局优化。
 
-当只有一个训练样本的时候，我们推导出了 LMS 规则。当一个训练集有超过一个训练样本的时候，有两种对这个规则的修改方法。第一种就是下面这个算法：
+#### 6 感知器学习算法（The perceptron learning algorithm）
 
-$
-\begin{aligned}
-&\qquad 重复直到收敛 \{ \\
-&\qquad\qquad\theta_j := \theta_j + \alpha \sum^m_{i=1}(y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}\quad(对每个j) \\
-&\qquad\}
-\end{aligned}
-$
-
-读者很容易能证明，在上面这个更新规则中求和项的值就是 <img src="https://www.zhihu.com/equation?tex=\frac {\partial J(\theta)}{\partial \theta_j}" alt="\frac {\partial J(\theta)}{\partial \theta_j}" class="ee_img tr_noresize" eeimg="1">  。所以这个更新规则实际上就是对原始的成本函数  <img src="https://www.zhihu.com/equation?tex=J " alt="J " class="ee_img tr_noresize" eeimg="1"> 进行简单的梯度下降。此时移动的距离就叫做步长，这一方法会在每一个步长内检查所有整个训练集中的所有样本，也叫做**批量梯度下降法（batch gradient descent**）。这里要注意，因为梯度下降法容易被局部最小值影响，而我们要解决的这个线性回归的优化问题需要的是一个全局的而不是局部的最优解；因此，梯度下降法应该总是收敛到全局最小值（假设学习速率  <img src="https://www.zhihu.com/equation?tex=\alpha" alt="\alpha" class="ee_img tr_noresize" eeimg="1">  不设置的过大）。 <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  很明确是一个凸二次函数。下面是一个样例，其中对一个二次函数使用了梯度下降法来找到最小值。
-
-<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f3.png" alt="cs229note1f3" style="zoom:50%;" />
-
-上图的椭圆就是一个二次函数的轮廓图。图中还有梯度下降法生成的规矩，初始点位置在 <img src="https://www.zhihu.com/equation?tex=(48,30)" alt="(48,30)" class="ee_img tr_noresize" eeimg="1"> 。图中的画的  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  标记了梯度下降法所经过的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的可用值。对之前的房屋数据集进行批量梯度下降来拟合  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  ，把房屋价格当作房屋面积的函数来进行预测，我们得到的结果是  <img src="https://www.zhihu.com/equation?tex=\theta_0 = 71.27, \theta_1 = 0.1345" alt="\theta_0 = 71.27, \theta_1 = 0.1345" class="ee_img tr_noresize" eeimg="1"> 。如果把  <img src="https://www.zhihu.com/equation?tex=h_{\theta}(x)" alt="h_{\theta}(x)" class="ee_img tr_noresize" eeimg="1">  作为一个定义域在  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  上的函数来投影，同时也投上训练集中的已有数据点，会得到下面这幅图：
-
-<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f4.png" alt="cs229note1f4" style="zoom:67%;" />
-
-如果在数据集中添加上卧室数目作为输入特征，那么得到的结果就是  <img src="https://www.zhihu.com/equation?tex=\theta_0 = 89.60, \theta_1 = 0.1392, \theta_2 = −8.738" alt="\theta_0 = 89.60, \theta_1 = 0.1392, \theta_2 = −8.738" class="ee_img tr_noresize" eeimg="1"> 
-
-这个结果就是用批量梯度下降法来获得的。此外还有另外一种方法能够替代批量梯度下降法，这种方法效果也不错。如下所示：
-
-$
-\begin{aligned}
-&\qquad循环：\{ \\
-&\qquad\qquad i从1到m,\{   \\
-&\qquad\qquad\qquad\theta_j := \theta_j  +\alpha(y^{(i)}-h_{\theta}(x^{(i)}))x_j^{(i)} \qquad(对每个 j) \\
-&\qquad\qquad\}  \\
-&\qquad\}
-\end{aligned}
-$
-
-在这个算法里，我们对整个训练集进行了循环遍历，每次遇到一个训练样本，根据每个单一训练样本的误差梯度来对参数进行更新。这个算法叫做**随机梯度下降法（stochastic gradient descent）**，或者叫**增量梯度下降法（incremental gradient descent）**。批量梯度下降法要在运行第一步之前先对整个训练集进行扫描遍历，当训练集的规模  <img src="https://www.zhihu.com/equation?tex=m" alt="m" class="ee_img tr_noresize" eeimg="1">  变得很大的时候，引起的性能开销就很不划算了；随机梯度下降法就没有这个问题，而是可以立即开始，对查询到的每个样本都进行运算。通常情况下，随机梯度下降法查找到足够接近最低值的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的速度要比批量梯度下降法更快一些。（也要注意，也有可能会一直无法收敛（converge）到最小值，这时候  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  会一直在  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1">  最小值附近震荡；不过通常情况下在最小值附近的这些值大多数其实也足够逼近了，足以满足咱们的精度要求，所以也可以用。 <img src="https://www.zhihu.com/equation?tex=^2" alt="^2" class="ee_img tr_noresize" eeimg="1"> ）由于这些原因，特别是在训练集很大的情况下，随机梯度下降往往比批量梯度下降更受青睐。
-
->2 当然更常见的情况通常是我们事先对数据集已经有了描述，并且有了一个确定的学习速率 <img src="https://www.zhihu.com/equation?tex=\alpha" alt="\alpha" class="ee_img tr_noresize" eeimg="1"> ，然后来运行随机梯度下降，同时逐渐让学习速率  <img src="https://www.zhihu.com/equation?tex=\alpha" alt="\alpha" class="ee_img tr_noresize" eeimg="1">  随着算法的运行而逐渐趋于  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1"> ，这样也能保证我们最后得到的参数会收敛到最小值，而不是在最小值范围进行震荡。
-
-综上，更推荐使用随机梯度下降法而不是批量梯度下降
+现在简要地聊另外一个算法，之后我们讲学习理论的时候还要讲到它。设想一下，对逻辑回归方法修改一下，“强迫”它输出的值要么是  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  要么是  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> 。要实现这个目的，很自然就应该把函数  <img src="https://www.zhihu.com/equation?tex=g" alt="g" class="ee_img tr_noresize" eeimg="1">  的定义修改一下，改成一个**阈值函数（threshold function）**：
 
 
-#### 2 正则方程（The normal equations）
-
-上文中的梯度下降法是一种找出  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  最小值的办法。事实上还有另一种实现方法——正则方程，这种方法寻找过程简单明了，而且不需要使用迭代算法。其基本思路是，通过特定方法直接找到导数为0的位置对应的的  <img src="https://www.zhihu.com/equation?tex=\theta_j" alt="\theta_j" class="ee_img tr_noresize" eeimg="1"> ，这样就能找到  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  的最小值了。
-
-
-##### 2.1 矩阵导数（Matrix derivatives）
-
-假如有一个函数  <img src="https://www.zhihu.com/equation?tex=f: R^{m\times n} → R" alt="f: R^{m\times n} → R" class="ee_img tr_noresize" eeimg="1">  从  <img src="https://www.zhihu.com/equation?tex=m\times n" alt="m\times n" class="ee_img tr_noresize" eeimg="1">  大小的矩阵映射到实数域，那么就可以定义当矩阵为  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  的时候有导函数  <img src="https://www.zhihu.com/equation?tex=f" alt="f" class="ee_img tr_noresize" eeimg="1">  如下所示：
-
-
-<img src="https://www.zhihu.com/equation?tex=\nabla_A f(A)=\begin{bmatrix} \frac {\partial f}{\partial A_{11}} & \dots  & \frac {\partial f}{\partial A_{1n}} \\ \vdots  & \ddots & \vdots  \\ \frac {\partial f}{\partial A_{m1}} & \dots  & \frac {\partial f}{\partial A_{mn}} \\ \end{bmatrix}
-" alt="\nabla_A f(A)=\begin{bmatrix} \frac {\partial f}{\partial A_{11}} & \dots  & \frac {\partial f}{\partial A_{1n}} \\ \vdots  & \ddots & \vdots  \\ \frac {\partial f}{\partial A_{m1}} & \dots  & \frac {\partial f}{\partial A_{mn}} \\ \end{bmatrix}
+<img src="https://www.zhihu.com/equation?tex=g(z)= \begin{cases} 1 &  if\quad z \geq 0  \\
+0 &  if\quad z < 0  \end{cases}
+" alt="g(z)= \begin{cases} 1 &  if\quad z \geq 0  \\
+0 &  if\quad z < 0  \end{cases}
 " class="ee_img tr_noresize" eeimg="1">
 
-因此，这个梯度  <img src="https://www.zhihu.com/equation?tex=\nabla_A f(A)" alt="\nabla_A f(A)" class="ee_img tr_noresize" eeimg="1"> 本身也是一个  <img src="https://www.zhihu.com/equation?tex=m\times n" alt="m\times n" class="ee_img tr_noresize" eeimg="1">  的矩阵，其中的第  <img src="https://www.zhihu.com/equation?tex=(i,j)" alt="(i,j)" class="ee_img tr_noresize" eeimg="1">  个元素是  <img src="https://www.zhihu.com/equation?tex=\frac {\partial f}{\partial A_{ij}} " alt="\frac {\partial f}{\partial A_{ij}} " class="ee_img tr_noresize" eeimg="1">  。
-假设  <img src="https://www.zhihu.com/equation?tex= A =\begin{bmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \\ \end{bmatrix} " alt=" A =\begin{bmatrix} A_{11} & A_{12} \\ A_{21} & A_{22} \\ \end{bmatrix} " class="ee_img tr_noresize" eeimg="1">  是一个  <img src="https://www.zhihu.com/equation?tex=2\times 2" alt="2\times 2" class="ee_img tr_noresize" eeimg="1">   矩阵，然后给定的函数  <img src="https://www.zhihu.com/equation?tex=f:R^{2\times 2} → R" alt="f:R^{2\times 2} → R" class="ee_img tr_noresize" eeimg="1">  为:
+如果我们还像之前一样令  <img src="https://www.zhihu.com/equation?tex=h_\theta(x) = g(\theta^T x)" alt="h_\theta(x) = g(\theta^T x)" class="ee_img tr_noresize" eeimg="1"> ，但用刚刚上面的阈值函数作为  <img src="https://www.zhihu.com/equation?tex=g" alt="g" class="ee_img tr_noresize" eeimg="1">  的定义，然后如果我们用了下面的更新规则：
 
-<img src="https://www.zhihu.com/equation?tex=f(A) = \frac 32A_{11}+5A^2_{12}+A_{21}A_{22}
-" alt="f(A) = \frac 32A_{11}+5A^2_{12}+A_{21}A_{22}
+
+<img src="https://www.zhihu.com/equation?tex=\theta_j := \theta_j +\alpha(y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}
+" alt="\theta_j := \theta_j +\alpha(y^{(i)}-h_\theta (x^{(i)}))x_j^{(i)}
 " class="ee_img tr_noresize" eeimg="1">
 
-这里面的  <img src="https://www.zhihu.com/equation?tex=A_{ij}" alt="A_{ij}" class="ee_img tr_noresize" eeimg="1">  表示的意思是矩阵  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  的第  <img src="https://www.zhihu.com/equation?tex=(i,j)" alt="(i,j)" class="ee_img tr_noresize" eeimg="1">  个元素。于是就可以计算梯度：
+这样我们就得到了**感知机学习算法。**
+
+感知机是一个二分类的线性分类模型，它要在二维（或高维）空间找到一个超平面，将所有二元类别分开。感知机一般只处理线性可分的样本。
+
+在 1960 年代，这个“感知机”被认为是对大脑中单个神经元工作方法的一个粗略建模。鉴于这个算法的简单程度，这个算法也是我们后续在本课程中讲学习理论的时候的起点。但一定要注意，虽然这个感知器学习算法可能看上去表面上跟我们之前讲的其他算法挺相似，但实际上这是一个和逻辑回归以及最小二乘线性回归等算法在种类上都完全不同的算法；尤其重要的是，很难对感知器的预测赋予有意义的概率解释，也很难作为一种最大似然估计算法来推出感知器学习算法。感知机是有限的，它永远无法解决异或问题。
 
 
-<img src="https://www.zhihu.com/equation?tex=\nabla _A f(A) =\begin{bmatrix} \frac  32 & 10A_{12} \\ A_{22} & A_{21} \\ \end{bmatrix}
-" alt="\nabla _A f(A) =\begin{bmatrix} \frac  32 & 10A_{12} \\ A_{22} & A_{21} \\ \end{bmatrix}
+#### 7 牛顿法
+
+牛顿法常常用于求实根和最优化算法，它是让  <img src="https://www.zhihu.com/equation?tex=l(\theta)" alt="l(\theta)" class="ee_img tr_noresize" eeimg="1">  取最大值的另一个算法。
+
+开始之前，咱们先想一下求一个方程零点的牛顿法。将 <img src="https://www.zhihu.com/equation?tex=f(x)" alt="f(x)" class="ee_img tr_noresize" eeimg="1"> 在 <img src="https://www.zhihu.com/equation?tex=x_0" alt="x_0" class="ee_img tr_noresize" eeimg="1"> 处一阶泰勒展开： <img src="https://www.zhihu.com/equation?tex=f(x)=f(x_0)+f'(x_0)(x-x_0)" alt="f(x)=f(x_0)+f'(x_0)(x-x_0)" class="ee_img tr_noresize" eeimg="1"> ，求解方程 <img src="https://www.zhihu.com/equation?tex=f(x)=0" alt="f(x)=0" class="ee_img tr_noresize" eeimg="1"> 即求解 <img src="https://www.zhihu.com/equation?tex=f(x_0)+f'(x_0)(x-x_0)=0" alt="f(x_0)+f'(x_0)(x-x_0)=0" class="ee_img tr_noresize" eeimg="1"> 
+
+可以解得 <img src="https://www.zhihu.com/equation?tex=x=x_1=x_0-\frac{f(x_0)}{f'(x_0)}" alt="x=x_1=x_0-\frac{f(x_0)}{f'(x_0)}" class="ee_img tr_noresize" eeimg="1"> ，但由于 <img src="https://www.zhihu.com/equation?tex=f(x)" alt="f(x)" class="ee_img tr_noresize" eeimg="1"> 的等式是泰勒展开的近似结果，所以此处求得的 <img src="https://www.zhihu.com/equation?tex=x_1" alt="x_1" class="ee_img tr_noresize" eeimg="1"> 并不能让 <img src="https://www.zhihu.com/equation?tex=f(x)=0" alt="f(x)=0" class="ee_img tr_noresize" eeimg="1"> ，只能说 <img src="https://www.zhihu.com/equation?tex=f(x_1)" alt="f(x_1)" class="ee_img tr_noresize" eeimg="1"> 比 <img src="https://www.zhihu.com/equation?tex=f(x_0)" alt="f(x_0)" class="ee_img tr_noresize" eeimg="1"> 更接近0，我们就可以采取迭代求解的思路，最终找到最终的近似的根。
+
+假如我们有一个从实数到实数的函数  <img src="https://www.zhihu.com/equation?tex=f:R \to R" alt="f:R \to R" class="ee_img tr_noresize" eeimg="1"> ，然后要找到一个  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  ，来满足  <img src="https://www.zhihu.com/equation?tex=f(\theta)=0" alt="f(\theta)=0" class="ee_img tr_noresize" eeimg="1"> ，其中  <img src="https://www.zhihu.com/equation?tex=\theta\in R" alt="\theta\in R" class="ee_img tr_noresize" eeimg="1">  是一个实数。牛顿法就是对  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  进行如下的更新：
+
+<img src="https://www.zhihu.com/equation?tex=\theta := \theta - \frac {f(\theta)}{f'(\theta)}
+" alt="\theta := \theta - \frac {f(\theta)}{f'(\theta)}
 " class="ee_img tr_noresize" eeimg="1">
 
-还要引入 ** <img src="https://www.zhihu.com/equation?tex=trace" alt="trace" class="ee_img tr_noresize" eeimg="1"> ** 求迹运算，简写为  <img src="https://www.zhihu.com/equation?tex=“tr”" alt="“tr”" class="ee_img tr_noresize" eeimg="1"> 。对于一个给定的  <img src="https://www.zhihu.com/equation?tex=n\times n" alt="n\times n" class="ee_img tr_noresize" eeimg="1">  方形矩阵  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1"> ，它的迹定义为对角项和，即主对角线上元素之和：
+这个方法可以通过一个很自然的解释，我们可以把它理解成用一个线性函数来对函数  <img src="https://www.zhihu.com/equation?tex=f" alt="f" class="ee_img tr_noresize" eeimg="1">  进行逼近，这条直线是  <img src="https://www.zhihu.com/equation?tex=f" alt="f" class="ee_img tr_noresize" eeimg="1">  的切线，而猜测值是  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> ，解的方法就是找到线性方程等于零的点，把这一个零点作为  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  设置给下一次猜测，然后以此类推。
+
+下面是对牛顿法的图解：
+<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f7.png" alt="cs229note1f7" style="zoom: 67%;" />
+
+在最左边的图里面，可以看到函数  <img src="https://www.zhihu.com/equation?tex=f" alt="f" class="ee_img tr_noresize" eeimg="1">  就是沿着  <img src="https://www.zhihu.com/equation?tex=y=0" alt="y=0" class="ee_img tr_noresize" eeimg="1">  的一条直线。这时候是想要找一个  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  来让  <img src="https://www.zhihu.com/equation?tex=f(\theta)=0" alt="f(\theta)=0" class="ee_img tr_noresize" eeimg="1"> 。这时候发现这个  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  值大概在  <img src="https://www.zhihu.com/equation?tex=1.3" alt="1.3" class="ee_img tr_noresize" eeimg="1">  左右。加入咱们猜测的初始值设定为  <img src="https://www.zhihu.com/equation?tex=\theta=4.5" alt="\theta=4.5" class="ee_img tr_noresize" eeimg="1"> 。牛顿法就是在  <img src="https://www.zhihu.com/equation?tex=\theta=4.5" alt="\theta=4.5" class="ee_img tr_noresize" eeimg="1">  这个位置画一条切线（中间的图）。这样就给出了下一个  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  猜测值的位置，也就是这个切线的零点，大概是 <img src="https://www.zhihu.com/equation?tex=2.8" alt="2.8" class="ee_img tr_noresize" eeimg="1"> 。最右面的图中的是再运行一次这个迭代产生的结果，这时候  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  大概是 <img src="https://www.zhihu.com/equation?tex=1.8" alt="1.8" class="ee_img tr_noresize" eeimg="1"> 。就这样几次迭代之后，很快就能接近  <img src="https://www.zhihu.com/equation?tex=\theta=1.3" alt="\theta=1.3" class="ee_img tr_noresize" eeimg="1"> 。
+
+牛顿法的给出的解决思路是让  <img src="https://www.zhihu.com/equation?tex=f(\theta) = 0" alt="f(\theta) = 0" class="ee_img tr_noresize" eeimg="1">  。如果咱们要用它来让函数  <img src="https://www.zhihu.com/equation?tex=l" alt="l" class="ee_img tr_noresize" eeimg="1">  取得最大值能不能行呢？函数  <img src="https://www.zhihu.com/equation?tex=l" alt="l" class="ee_img tr_noresize" eeimg="1">  的最大值的点应该对应着是它的导数 <img src="https://www.zhihu.com/equation?tex=l'(\theta)" alt="l'(\theta)" class="ee_img tr_noresize" eeimg="1">  等于零的点。所以通过令 <img src="https://www.zhihu.com/equation?tex=f(\theta) = l'(\theta)" alt="f(\theta) = l'(\theta)" class="ee_img tr_noresize" eeimg="1"> ，咱们就可以同样用牛顿法来找到  <img src="https://www.zhihu.com/equation?tex=l" alt="l" class="ee_img tr_noresize" eeimg="1">  的最大值，然后得到下面的更新规则：
 
 
-<img src="https://www.zhihu.com/equation?tex=trA = \sum^n_{i=1} A_{ii}
-" alt="trA = \sum^n_{i=1} A_{ii}
+<img src="https://www.zhihu.com/equation?tex=\theta := \theta - \frac {l'(\theta)}{l''(\theta)}
+" alt="\theta := \theta - \frac {l'(\theta)}{l''(\theta)}
 " class="ee_img tr_noresize" eeimg="1">
 
-假如  <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  是一个实数，实际上  <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  就可以看做是一个  <img src="https://www.zhihu.com/equation?tex=1\times 1" alt="1\times 1" class="ee_img tr_noresize" eeimg="1">  的矩阵，那么就有  <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  的迹  <img src="https://www.zhihu.com/equation?tex=tr a = a" alt="tr a = a" class="ee_img tr_noresize" eeimg="1"> 。(如果你之前没有见到过这个“运算记号”，就可以把  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  的迹看成是  <img src="https://www.zhihu.com/equation?tex=tr(A)" alt="tr(A)" class="ee_img tr_noresize" eeimg="1"> ，或者理解成为一个对矩阵  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  进行操作的  <img src="https://www.zhihu.com/equation?tex=trace" alt="trace" class="ee_img tr_noresize" eeimg="1">  函数。不过通常情况都是写成不带括号的形式更多一些。) 
+（扩展一下，额外再思考一下: 如果咱们要用牛顿法来求一个函数的最小值而不是最大值，该怎么修改？）`试试法线的零点`
 
-如果有两个矩阵  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  和 <img src="https://www.zhihu.com/equation?tex=B" alt="B" class="ee_img tr_noresize" eeimg="1"> ，能够满足  <img src="https://www.zhihu.com/equation?tex=AB" alt="AB" class="ee_img tr_noresize" eeimg="1">  为方阵， <img src="https://www.zhihu.com/equation?tex=trace" alt="trace" class="ee_img tr_noresize" eeimg="1">  求迹运算就有一个特殊的性质：  <img src="https://www.zhihu.com/equation?tex=trAB = trBA" alt="trAB = trBA" class="ee_img tr_noresize" eeimg="1">  (主对角线的元素和时不变的，可较简单的证明。
+最后，在逻辑回归的背景中， <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  是一个有值的向量，所以我们要对牛顿法进行扩展来适应这个情况。牛顿法进行扩展到多维情况，也叫牛顿-拉普森法（Newton-Raphson method），如下所示：
 
-在此基础上进行推论，就能得到类似下面这样的等式关系：
 
-<img src="https://www.zhihu.com/equation?tex=trABC=trCAB=trBCA \\
-trABCD=trDABC=trCDAB=trBCDA
-" alt="trABC=trCAB=trBCA \\
-trABCD=trDABC=trCDAB=trBCDA
+<img src="https://www.zhihu.com/equation?tex=\theta := \theta - H^{-1}\nabla_\theta l(\theta)
+" alt="\theta := \theta - H^{-1}\nabla_\theta l(\theta)
 " class="ee_img tr_noresize" eeimg="1">
 
-注意此处相对顺序不能改变，记忆是可以看做是一个循环滚动的形式。
+上面这个式子中的  <img src="https://www.zhihu.com/equation?tex=\nabla_\theta l(\theta)" alt="\nabla_\theta l(\theta)" class="ee_img tr_noresize" eeimg="1"> 和之前的样例中的类似，是关于  <img src="https://www.zhihu.com/equation?tex=\theta_i" alt="\theta_i" class="ee_img tr_noresize" eeimg="1">  的  <img src="https://www.zhihu.com/equation?tex=l(\theta)" alt="l(\theta)" class="ee_img tr_noresize" eeimg="1">  的偏导数向量；而  <img src="https://www.zhihu.com/equation?tex=h" alt="h" class="ee_img tr_noresize" eeimg="1">  是一个  <img src="https://www.zhihu.com/equation?tex=n\times n" alt="n\times n" class="ee_img tr_noresize" eeimg="1">  矩阵 ,实际上如果包含截距项的话，应该是,  <img src="https://www.zhihu.com/equation?tex=(n + 1)\times (n + 1)" alt="(n + 1)\times (n + 1)" class="ee_img tr_noresize" eeimg="1"> ，也叫做 Hessian, 其详细定义是：
 
-下面这些和求迹运算相关的等量关系也很容易证明。其中  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=B" alt="B" class="ee_img tr_noresize" eeimg="1">  都是方形矩阵， <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  是一个实数：
 
-<img src="https://www.zhihu.com/equation?tex=trA=trA^T \\
-tr(A+B)=trA+trB \\
-tr (a A)=a tr(A)
-" alt="trA=trA^T \\
-tr(A+B)=trA+trB \\
-tr (a A)=a tr(A)
+<img src="https://www.zhihu.com/equation?tex=H_{ij}= \frac {\partial^2 l(\theta)}{\partial \theta_i \partial \theta_j}
+" alt="H_{ij}= \frac {\partial^2 l(\theta)}{\partial \theta_i \partial \theta_j}
 " class="ee_img tr_noresize" eeimg="1">
 
-接下来提出一些矩阵导数（其中的一些直到本节末尾才用得上）。要注意等式 <img src="https://www.zhihu.com/equation?tex=(4)" alt="(4)" class="ee_img tr_noresize" eeimg="1"> 中的 <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  必须是**非奇异方阵（non-singular square matrices**），而  <img src="https://www.zhihu.com/equation?tex=|A|" alt="|A|" class="ee_img tr_noresize" eeimg="1">  表示的是矩阵  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  的行列式。那么我们就有下面这些等量关系：
+牛顿法通常都能比（批量）梯度下降法收敛得更快，而且达到最小值所需要的迭代次数也低很多。然而，牛顿法中的单次迭代往往要比梯度下降法的单步耗费更多的性能开销，因为要查找和转换一个   <img src="https://www.zhihu.com/equation?tex=n\times n" alt="n\times n" class="ee_img tr_noresize" eeimg="1"> 的 Hessian 矩阵；不过只要这个  <img src="https://www.zhihu.com/equation?tex=n" alt="n" class="ee_img tr_noresize" eeimg="1">  不是太大，牛顿法通常就还是更快一些。当用牛顿法来在逻辑回归中求似然函数 <img src="https://www.zhihu.com/equation?tex=l(\theta)" alt="l(\theta)" class="ee_img tr_noresize" eeimg="1">  的最大值的时候，得到这一结果的方法也叫做**Fisher评分（Fisher scoring）。**（牛顿法和Hessian矩阵会在专栏做更详细的介绍）
 
+### 第三部分 广义线性模型 (Generalized Linear Models) <img src="https://www.zhihu.com/equation?tex=^5" alt="^5" class="ee_img tr_noresize" eeimg="1"> 
+
+>5 本节展示的内容受以下两份作品的启发：Michael I. Jordan, Learning in graphical models (unpublished book draft), 以及 McCullagh and Nelder, Generalized Linear Models (2nd ed.)。
+
+到目前为止，我们已经分析了回归案例和分类案例。在回归的案例中，我们得到的函数是  <img src="https://www.zhihu.com/equation?tex=y|x; \theta ∼ N (\mu, \sigma^2)" alt="y|x; \theta ∼ N (\mu, \sigma^2)" class="ee_img tr_noresize" eeimg="1"> ；而分类的案例中，函数是  <img src="https://www.zhihu.com/equation?tex=y|x; \theta ∼ Bernoulli(\phi)" alt="y|x; \theta ∼ Bernoulli(\phi)" class="ee_img tr_noresize" eeimg="1"> ，这里面的 <img src="https://www.zhihu.com/equation?tex=\mu" alt="\mu" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=\phi" alt="\phi" class="ee_img tr_noresize" eeimg="1">  分别是  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的某种函数。在本节，我们会发现这两种方法都是一个更广泛使用的模型的特例，这种更广泛使用的模型就叫做广义线性模型。我们还会讲一下广义线性模型中的其他模型是如何推出的，以及如何应用到其他的分类和回归问题上。
+
+#### 8 指数族 (The exponential family)
+
+在学习 GLMs 之前，我们要先定义一下指数组分布（exponential family distributions）。如果一个分布能用下面的方式来写出来，我们就说这类分布属于指数族：
+
+
+<img src="https://www.zhihu.com/equation?tex=p(y;\eta) =b(y)exp(\eta^TT(y)-a(\eta)) \qquad \text{(6)}
+" alt="p(y;\eta) =b(y)exp(\eta^TT(y)-a(\eta)) \qquad \text{(6)}
+" class="ee_img tr_noresize" eeimg="1">
+
+上面的式子中， <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  叫做此分布的**自然参数** （natural parameter，也叫**典范参数 canonical parameter**） ；  <img src="https://www.zhihu.com/equation?tex=T(y)" alt="T(y)" class="ee_img tr_noresize" eeimg="1">  叫做**充分统计量（sufficient statistic）** ，我们目前用的这些分布中通常  <img src="https://www.zhihu.com/equation?tex=T (y) = y" alt="T (y) = y" class="ee_img tr_noresize" eeimg="1"> ；而  <img src="https://www.zhihu.com/equation?tex=a(\eta)" alt="a(\eta)" class="ee_img tr_noresize" eeimg="1">  是一个**对数分割函数（log partition function）。**  <img src="https://www.zhihu.com/equation?tex=e^{−a(\eta)}" alt="e^{−a(\eta)}" class="ee_img tr_noresize" eeimg="1">  这个量本质上扮演了归一化常数（normalization constant）的角色，也就是确保  <img src="https://www.zhihu.com/equation?tex=p(y; \eta)" alt="p(y; \eta)" class="ee_img tr_noresize" eeimg="1">  的总和或者积分等于 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> 。
+
+当给定  <img src="https://www.zhihu.com/equation?tex=T" alt="T" class="ee_img tr_noresize" eeimg="1"> ,  <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=b" alt="b" class="ee_img tr_noresize" eeimg="1">  时，就定义了一个用  <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  进行参数化的分布族（family，或者叫集 set）；通过改变  <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1"> ，我们就能得到这个分布族中的不同分布。
+
+现在咱们看到的伯努利（Bernoulli）分布和高斯（Gaussian）分布就都属于指数分布族。伯努利分布的均值是 <img src="https://www.zhihu.com/equation?tex=\phi" alt="\phi" class="ee_img tr_noresize" eeimg="1"> ，也写作  <img src="https://www.zhihu.com/equation?tex=Bernoulli(\phi)" alt="Bernoulli(\phi)" class="ee_img tr_noresize" eeimg="1"> ，确定的分布是  <img src="https://www.zhihu.com/equation?tex=y \in \{0, 1\}" alt="y \in \{0, 1\}" class="ee_img tr_noresize" eeimg="1"> ，因此有  <img src="https://www.zhihu.com/equation?tex=p(y = 1; \phi) = \phi" alt="p(y = 1; \phi) = \phi" class="ee_img tr_noresize" eeimg="1"> ;  <img src="https://www.zhihu.com/equation?tex=p(y = 0;\phi) = 1−\phi" alt="p(y = 0;\phi) = 1−\phi" class="ee_img tr_noresize" eeimg="1"> 。这时候只要修改 <img src="https://www.zhihu.com/equation?tex=\phi" alt="\phi" class="ee_img tr_noresize" eeimg="1"> ，就能得到一系列不同均值的伯努利分布了。通过修改 <img src="https://www.zhihu.com/equation?tex=\phi" alt="\phi" class="ee_img tr_noresize" eeimg="1"> ,而得到的这种伯努利分布，就属于指数分布族；也就是说，只要给定一组  <img src="https://www.zhihu.com/equation?tex=T" alt="T" class="ee_img tr_noresize" eeimg="1"> ， <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=b" alt="b" class="ee_img tr_noresize" eeimg="1"> ，就可以用上面的等式 <img src="https://www.zhihu.com/equation?tex=(6)" alt="(6)" class="ee_img tr_noresize" eeimg="1"> 来确定一组特定的伯努利分布了。
+
+我们这样来写伯努利分布：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-   \nabla_A tr AB & = B^T & \text{(1)}\\
-   \nabla_{A^T} f(A) & = (\nabla_{A} f(A))^T &\text{(2)}\\
-   \nabla_A tr ABA^TC& = CAB+C^TAB^T &\text{(3)}\\
-   \nabla_A|A| & = |A|(A^{-1})^T &\text{(4)}\\
+p(y;\phi) & = \phi ^y(1-\phi)^{1-y}\\
+& = exp(y \log \phi + (1-y)\log(1-\phi))\\
+& = exp( (log (\frac {\phi}{1-\phi}))y+\log (1-\phi) )\\
 \end{aligned}
 " alt="\begin{aligned}
-   \nabla_A tr AB & = B^T & \text{(1)}\\
-   \nabla_{A^T} f(A) & = (\nabla_{A} f(A))^T &\text{(2)}\\
-   \nabla_A tr ABA^TC& = CAB+C^TAB^T &\text{(3)}\\
-   \nabla_A|A| & = |A|(A^{-1})^T &\text{(4)}\\
+p(y;\phi) & = \phi ^y(1-\phi)^{1-y}\\
+& = exp(y \log \phi + (1-y)\log(1-\phi))\\
+& = exp( (log (\frac {\phi}{1-\phi}))y+\log (1-\phi) )\\
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-为了使矩阵运算的记号更加具体，咱们就详细解释一下这些等式中的第一个。假如我们有一个确定的矩阵  <img src="https://www.zhihu.com/equation?tex=B \in R^{n\times m}" alt="B \in R^{n\times m}" class="ee_img tr_noresize" eeimg="1"> （注意顺序，是 <img src="https://www.zhihu.com/equation?tex=n\times m" alt="n\times m" class="ee_img tr_noresize" eeimg="1"> ，这里的意思也就是  <img src="https://www.zhihu.com/equation?tex=B" alt="B" class="ee_img tr_noresize" eeimg="1">  的元素都是实数， <img src="https://www.zhihu.com/equation?tex=B" alt="B" class="ee_img tr_noresize" eeimg="1">  的形状是  <img src="https://www.zhihu.com/equation?tex=n\times m" alt="n\times m" class="ee_img tr_noresize" eeimg="1">  的一个矩阵），那么接下来就可以定义一个函数 <img src="https://www.zhihu.com/equation?tex= f: R^{m\times n} → R" alt=" f: R^{m\times n} → R" class="ee_img tr_noresize" eeimg="1">  ，对应这里的就是  <img src="https://www.zhihu.com/equation?tex=f(A) = tr(AB)" alt="f(A) = tr(AB)" class="ee_img tr_noresize" eeimg="1"> 。这里要注意，这个矩阵是有意义的，因为如果  <img src="https://www.zhihu.com/equation?tex=A \in R^{m\times n} " alt="A \in R^{m\times n} " class="ee_img tr_noresize" eeimg="1"> ，那么  <img src="https://www.zhihu.com/equation?tex=AB" alt="AB" class="ee_img tr_noresize" eeimg="1">  就是一个方阵，是方阵就可以应用  <img src="https://www.zhihu.com/equation?tex=trace" alt="trace" class="ee_img tr_noresize" eeimg="1">  求迹运算；因此，实际上  <img src="https://www.zhihu.com/equation?tex=f" alt="f" class="ee_img tr_noresize" eeimg="1">  映射的是从  <img src="https://www.zhihu.com/equation?tex=R^{m\times n} " alt="R^{m\times n} " class="ee_img tr_noresize" eeimg="1">  到实数域  <img src="https://www.zhihu.com/equation?tex=R" alt="R" class="ee_img tr_noresize" eeimg="1"> 。这样接下来就可以使用矩阵导数来找到  <img src="https://www.zhihu.com/equation?tex=\nabla_Af(A)" alt="\nabla_Af(A)" class="ee_img tr_noresize" eeimg="1">  ，这个导函数本身也是一个  <img src="https://www.zhihu.com/equation?tex=m \times n " alt="m \times n " class="ee_img tr_noresize" eeimg="1"> 的矩阵。上面的等式 <img src="https://www.zhihu.com/equation?tex=(1)" alt="(1)" class="ee_img tr_noresize" eeimg="1">  表明了这个导数矩阵的第  <img src="https://www.zhihu.com/equation?tex=(i,j)" alt="(i,j)" class="ee_img tr_noresize" eeimg="1"> 个元素等同于  <img src="https://www.zhihu.com/equation?tex=B^T" alt="B^T" class="ee_img tr_noresize" eeimg="1">  （ <img src="https://www.zhihu.com/equation?tex=B" alt="B" class="ee_img tr_noresize" eeimg="1"> 的转置）的第  <img src="https://www.zhihu.com/equation?tex=(i,j)" alt="(i,j)" class="ee_img tr_noresize" eeimg="1">  个元素，或者更直接表示成  <img src="https://www.zhihu.com/equation?tex=B_{ji}" alt="B_{ji}" class="ee_img tr_noresize" eeimg="1"> 。
-
-上面等式 <img src="https://www.zhihu.com/equation?tex=(1-3)" alt="(1-3)" class="ee_img tr_noresize" eeimg="1">  都很简单，证明就都留给读者做练习了。等式 <img src="https://www.zhihu.com/equation?tex=(4)" alt="(4)" class="ee_img tr_noresize" eeimg="1"> 需要用逆矩阵的伴随矩阵来推导出。 <img src="https://www.zhihu.com/equation?tex=^3" alt="^3" class="ee_img tr_noresize" eeimg="1"> 
-
->逆矩阵：设 <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1"> 是数域上的一个n阶矩阵，若在相同数域上存在另一个n阶矩阵 <img src="https://www.zhihu.com/equation?tex=A^{-1}" alt="A^{-1}" class="ee_img tr_noresize" eeimg="1"> ，使得 <img src="https://www.zhihu.com/equation?tex=AA^{-1}=I" alt="AA^{-1}=I" class="ee_img tr_noresize" eeimg="1"> ,则称 <img src="https://www.zhihu.com/equation?tex=A^{-1}" alt="A^{-1}" class="ee_img tr_noresize" eeimg="1"> 为 <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1"> 的逆矩阵，而A则被称为[可逆矩阵](https://baike.baidu.com/item/可逆矩阵/11035614)。注： <img src="https://www.zhihu.com/equation?tex=I" alt="I" class="ee_img tr_noresize" eeimg="1"> 为[单位矩阵](https://baike.baidu.com/item/单位矩阵/8540268)。
->
->伴随矩阵：设矩阵 <img src="https://www.zhihu.com/equation?tex=A=(a_{ij})_{n*n}" alt="A=(a_{ij})_{n*n}" class="ee_img tr_noresize" eeimg="1"> ,将矩阵 <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1"> 的元素 <img src="https://www.zhihu.com/equation?tex=a_{ij}" alt="a_{ij}" class="ee_img tr_noresize" eeimg="1"> 所在的第i行第j列去掉，剩余的元素按原有的排列顺序组成的n-1阶矩阵所确定的行列式称为元素 <img src="https://www.zhihu.com/equation?tex=a_{ij}" alt="a_{ij}" class="ee_img tr_noresize" eeimg="1"> 的余子式，记为 <img src="https://www.zhihu.com/equation?tex=M_{ij}" alt="M_{ij}" class="ee_img tr_noresize" eeimg="1"> ，称 <img src="https://www.zhihu.com/equation?tex=A_{ij=}(-1)^{i+j}M_{ij}" alt="A_{ij=}(-1)^{i+j}M_{ij}" class="ee_img tr_noresize" eeimg="1"> 为元素 <img src="https://www.zhihu.com/equation?tex=a_{ij}" alt="a_{ij}" class="ee_img tr_noresize" eeimg="1"> 的代数余子式。
->
->定义一个矩阵  <img src="https://www.zhihu.com/equation?tex=A'" alt="A'" class="ee_img tr_noresize" eeimg="1"> ，它的第  <img src="https://www.zhihu.com/equation?tex=(i,j)" alt="(i,j)" class="ee_img tr_noresize" eeimg="1">  个元素是 <img src="https://www.zhihu.com/equation?tex= (−1)^{i+j}" alt=" (−1)^{i+j}" class="ee_img tr_noresize" eeimg="1">  与矩阵  <img src="https://www.zhihu.com/equation?tex=A " alt="A " class="ee_img tr_noresize" eeimg="1"> 移除 第  <img src="https://www.zhihu.com/equation?tex=i" alt="i" class="ee_img tr_noresize" eeimg="1">  行 和 第  <img src="https://www.zhihu.com/equation?tex=j" alt="j" class="ee_img tr_noresize" eeimg="1">  列 之后的行列式的乘积，最后组成一个与矩阵 <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1"> 大小相等的新的矩阵。可以证明有 <img src="https://www.zhihu.com/equation?tex=A^{−1} = (A')^T /|A|" alt="A^{−1} = (A')^T /|A|" class="ee_img tr_noresize" eeimg="1"> 。这也就意味着  <img src="https://www.zhihu.com/equation?tex=A' = |A|(A^{−1})^T " alt="A' = |A|(A^{−1})^T " class="ee_img tr_noresize" eeimg="1"> 。此外，一个矩阵  <img src="https://www.zhihu.com/equation?tex=A" alt="A" class="ee_img tr_noresize" eeimg="1">  的行列式也可以写成  <img src="https://www.zhihu.com/equation?tex=|A| = \sum_j A_{ij}A'_{ij}" alt="|A| = \sum_j A_{ij}A'_{ij}" class="ee_img tr_noresize" eeimg="1">  。因为  <img src="https://www.zhihu.com/equation?tex=(A')_{ij}" alt="(A')_{ij}" class="ee_img tr_noresize" eeimg="1">  不依赖  <img src="https://www.zhihu.com/equation?tex=A_{ij}" alt="A_{ij}" class="ee_img tr_noresize" eeimg="1">  （通过定义也能看出来），这也就意味着 <img src="https://www.zhihu.com/equation?tex=(\frac  \partial {\partial A_{ij}})|A| = A'_{ij} " alt="(\frac  \partial {\partial A_{ij}})|A| = A'_{ij} " class="ee_img tr_noresize" eeimg="1"> ，综合起来也就得到上面的结果。
-
-##### 2.2 最小二乘法回顾（Least squares revisited）
-
-通过刚才的内容，我们大概掌握了矩阵导数这一工具，接下来就继续用逼近模型（closed-form）来找到能让  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1">  最小的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  值。首先咱们把  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  用矩阵-向量的记号来重新表述。
-
-给定一个训练集，把**设计矩阵（design matrix）**  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  设置为一个  <img src="https://www.zhihu.com/equation?tex=m\times n" alt="m\times n" class="ee_img tr_noresize" eeimg="1">  矩阵（实际上，如果考虑到截距项，也就是  <img src="https://www.zhihu.com/equation?tex=\theta_0" alt="\theta_0" class="ee_img tr_noresize" eeimg="1">  那一项，就应该是  <img src="https://www.zhihu.com/equation?tex=m\times (n+1)" alt="m\times (n+1)" class="ee_img tr_noresize" eeimg="1">  矩阵），这个矩阵里面包含了训练样本的输入值每一行的 <img src="https://www.zhihu.com/equation?tex=x^i" alt="x^i" class="ee_img tr_noresize" eeimg="1"> 代表一个 <img src="https://www.zhihu.com/equation?tex=n" alt="n" class="ee_img tr_noresize" eeimg="1"> 或 <img src="https://www.zhihu.com/equation?tex=n+1" alt="n+1" class="ee_img tr_noresize" eeimg="1"> 列的行向量：
-
-
-<img src="https://www.zhihu.com/equation?tex=X =\begin{bmatrix}
--(x^{(1)}) ^T-\\
--(x^{(2)}) ^T-\\
-\vdots \\
--(x^{(m)}) ^T-\\
-\end{bmatrix}
-" alt="X =\begin{bmatrix}
--(x^{(1)}) ^T-\\
--(x^{(2)}) ^T-\\
-\vdots \\
--(x^{(m)}) ^T-\\
-\end{bmatrix}
-" class="ee_img tr_noresize" eeimg="1">
-
-然后，设  <img src="https://www.zhihu.com/equation?tex=\vec{y}" alt="\vec{y}" class="ee_img tr_noresize" eeimg="1">  是一个  <img src="https://www.zhihu.com/equation?tex=m" alt="m" class="ee_img tr_noresize" eeimg="1">  维向量（m-dimensional vector），其中包含了训练集中的所有目标值：
-
-
-<img src="https://www.zhihu.com/equation?tex=y =\begin{bmatrix}
-y^{(1)}\\
-y^{(2)}\\
-\vdots \\
-y^{(m)}\\
-\end{bmatrix}
-" alt="y =\begin{bmatrix}
-y^{(1)}\\
-y^{(2)}\\
-\vdots \\
-y^{(m)}\\
-\end{bmatrix}
-" class="ee_img tr_noresize" eeimg="1">
-
-因为  <img src="https://www.zhihu.com/equation?tex=h_\theta (x^{(i)}) = (x^{(i)})^T\theta " alt="h_\theta (x^{(i)}) = (x^{(i)})^T\theta " class="ee_img tr_noresize" eeimg="1"> （加入截距项，上文有推导），所以可以证明存在下面这种等量关系：
+因此，自然参数（natural parameter）就给出了，即  <img src="https://www.zhihu.com/equation?tex=\eta = log (\frac   \phi {1 − \phi})" alt="\eta = log (\frac   \phi {1 − \phi})" class="ee_img tr_noresize" eeimg="1"> 。 很有趣的是，如果我们翻转这个定义，用 <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  来解  <img src="https://www.zhihu.com/equation?tex=\phi" alt="\phi" class="ee_img tr_noresize" eeimg="1">  就会得到  <img src="https://www.zhihu.com/equation?tex=\phi = 1/ (1 + e^{−\eta} )" alt="\phi = 1/ (1 + e^{−\eta} )" class="ee_img tr_noresize" eeimg="1"> 。这正好就是之前我们刚刚见到过的 S型函数(sigmoid function)！在我们把逻辑回归作为一种广义线性模型（GLM）的时候还会得到：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-X\theta - \vec{y}  &=
-\begin{bmatrix}
-(x^{(1)})^T\theta \\
-\vdots \\
-(x^{(m)})^T\theta\\
-\end{bmatrix} -
-\begin{bmatrix}
-y^{(1)}\\
-\vdots \\
-y^{(m)}\\
-\end{bmatrix}\\
-& =
-\begin{bmatrix}
-h_\theta (x^{1}) -y^{(1)}\\
-\vdots \\
-h_\theta (x^{m})-y^{(m)}\\
-\end{bmatrix}\\
+T(y) &= y \\
+a( \eta) & = - \log (1- \phi) \\
+& = \log {(1+ e^ \eta)}\\
+b(y)&=1
 \end{aligned}
 " alt="\begin{aligned}
-X\theta - \vec{y}  &=
-\begin{bmatrix}
-(x^{(1)})^T\theta \\
-\vdots \\
-(x^{(m)})^T\theta\\
-\end{bmatrix} -
-\begin{bmatrix}
-y^{(1)}\\
-\vdots \\
-y^{(m)}\\
-\end{bmatrix}\\
-& =
-\begin{bmatrix}
-h_\theta (x^{1}) -y^{(1)}\\
-\vdots \\
-h_\theta (x^{m})-y^{(m)}\\
-\end{bmatrix}\\
+T(y) &= y \\
+a( \eta) & = - \log (1- \phi) \\
+& = \log {(1+ e^ \eta)}\\
+b(y)&=1
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-对于向量  <img src="https://www.zhihu.com/equation?tex=\vec{z}" alt="\vec{z}" class="ee_img tr_noresize" eeimg="1">  ，则有  <img src="https://www.zhihu.com/equation?tex=z^T z = \sum_i z_i^2" alt="z^T z = \sum_i z_i^2" class="ee_img tr_noresize" eeimg="1">  ，因此利用这个性质，可以推出:
+上面这组式子就表明了伯努利分布可以写成等式 <img src="https://www.zhihu.com/equation?tex=(6)" alt="(6)" class="ee_img tr_noresize" eeimg="1"> 的形式，使用一组合适的 <img src="https://www.zhihu.com/equation?tex=T" alt="T" class="ee_img tr_noresize" eeimg="1"> ,  <img src="https://www.zhihu.com/equation?tex=a" alt="a" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=b" alt="b" class="ee_img tr_noresize" eeimg="1"> 。
+
+接下来就看看高斯分布吧。在推导线性回归的时候， <img src="https://www.zhihu.com/equation?tex=\sigma^2" alt="\sigma^2" class="ee_img tr_noresize" eeimg="1">  的值对我们最终选择的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=h_\theta(x)" alt="h_\theta(x)" class="ee_img tr_noresize" eeimg="1">  都没有影响。所以我们可以给  <img src="https://www.zhihu.com/equation?tex=\sigma^2" alt="\sigma^2" class="ee_img tr_noresize" eeimg="1">  取个任意值。为了简化推导过程，就令 <img src="https://www.zhihu.com/equation?tex=\sigma^2 = 1" alt="\sigma^2 = 1" class="ee_img tr_noresize" eeimg="1"> 。 <img src="https://www.zhihu.com/equation?tex=^6" alt="^6" class="ee_img tr_noresize" eeimg="1"> 然后就有了下面的等式：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-\frac 12(X\theta - \vec{y})^T (X\theta - \vec{y}) &=\frac 12 \sum^m_{i=1}(h_\theta (x^{(i)})-y^{(i)})^2\\
-&= J(\theta)
+p(y;\mu) &= \frac 1{\sqrt{2\pi}} exp (- \frac  12 (y-\mu)^2) \\
+& =  \frac 1{\sqrt{2\pi}} exp (- \frac  12 y^2) \cdot exp (\mu y -\frac  12 \mu^2) \\
 \end{aligned}
 " alt="\begin{aligned}
-\frac 12(X\theta - \vec{y})^T (X\theta - \vec{y}) &=\frac 12 \sum^m_{i=1}(h_\theta (x^{(i)})-y^{(i)})^2\\
-&= J(\theta)
+p(y;\mu) &= \frac 1{\sqrt{2\pi}} exp (- \frac  12 (y-\mu)^2) \\
+& =  \frac 1{\sqrt{2\pi}} exp (- \frac  12 y^2) \cdot exp (\mu y -\frac  12 \mu^2) \\
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-最后，要让  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  的值最小，就要找到函数对于 <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> 导数。结合等式 <img src="https://www.zhihu.com/equation?tex=(2)" alt="(2)" class="ee_img tr_noresize" eeimg="1"> 和等式 <img src="https://www.zhihu.com/equation?tex=(3)" alt="(3)" class="ee_img tr_noresize" eeimg="1"> ，就能得到下面这个等式 <img src="https://www.zhihu.com/equation?tex=(5)" alt="(5)" class="ee_img tr_noresize" eeimg="1"> ：
+>6 如果我们把  <img src="https://www.zhihu.com/equation?tex=\sigma^2" alt="\sigma^2" class="ee_img tr_noresize" eeimg="1">  留作一个变量，高斯分布就也可以表达成指数分布的形式，其中  <img src="https://www.zhihu.com/equation?tex=\eta \in R^2" alt="\eta \in R^2" class="ee_img tr_noresize" eeimg="1">  就是一个二维向量，同时依赖  <img src="https://www.zhihu.com/equation?tex=\mu" alt="\mu" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=\sigma" alt="\sigma" class="ee_img tr_noresize" eeimg="1"> 。然而，对于广义线性模型GLMs方面的用途，  <img src="https://www.zhihu.com/equation?tex=\sigma^2" alt="\sigma^2" class="ee_img tr_noresize" eeimg="1">  参数也可以看成是对指数分布族的更泛化的定义：  <img src="https://www.zhihu.com/equation?tex=p(y; \eta, \tau ) = b(a, \tau ) exp((\eta^T T (y) − a(\eta))/c(\tau))" alt="p(y; \eta, \tau ) = b(a, \tau ) exp((\eta^T T (y) − a(\eta))/c(\tau))" class="ee_img tr_noresize" eeimg="1"> 。这里面的 <img src="https://www.zhihu.com/equation?tex=\tau" alt="\tau" class="ee_img tr_noresize" eeimg="1">  叫做**分散度参数（dispersion parameter）**，对于高斯分布，  <img src="https://www.zhihu.com/equation?tex=c(\tau) = \sigma^2" alt="c(\tau) = \sigma^2" class="ee_img tr_noresize" eeimg="1">  ；不过上文中我们已经进行了简化，所以针对我们要考虑的各种案例，就不需要再进行更加泛化的定义了。
 
-
-<img src="https://www.zhihu.com/equation?tex=\nabla_{A^T} trABA^TC =B^TA^TC^T+BA^TC \qquad \text{(5)}
-" alt="\nabla_{A^T} trABA^TC =B^TA^TC^T+BA^TC \qquad \text{(5)}
-" class="ee_img tr_noresize" eeimg="1">
-
-因此就有：
+这样，我们就可以看出来高斯分布是属于指数分布族的，可以写成下面这样：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-\nabla_\theta J(\theta) &= \nabla_\theta \frac 12 (X\theta - \vec{y})^T (X\theta - \vec{y}) \\
-&= \frac  12 \nabla_\theta (\theta ^TX^TX\theta -\theta^T X^T \vec{y} - \vec{y} ^TX\theta +\vec{y}^T \vec{y})\\
-&= \frac  12 \nabla_\theta tr(\theta ^TX^TX\theta -\theta^T X^T \vec{y} - \vec{y} ^TX\theta +\vec{y}^T \vec{y})\\
-&= \frac  12 \nabla_\theta (tr \theta ^TX^TX\theta - 2tr\vec{y} ^T X\theta)\\
-&= \frac  12 (X^TX\theta+X^TX\theta-2X^T\vec{y}) \\
-&= X^TX\theta-X^T\vec{y}\\
+\eta & = \mu \\
+T(y) & = y \\
+a(\eta) & = \mu ^2 /2\\
+& = \eta ^2 /2\\
+b(y) & = (1/ \sqrt {2\pi })exp(-y^2/2)
 \end{aligned}
 " alt="\begin{aligned}
-\nabla_\theta J(\theta) &= \nabla_\theta \frac 12 (X\theta - \vec{y})^T (X\theta - \vec{y}) \\
-&= \frac  12 \nabla_\theta (\theta ^TX^TX\theta -\theta^T X^T \vec{y} - \vec{y} ^TX\theta +\vec{y}^T \vec{y})\\
-&= \frac  12 \nabla_\theta tr(\theta ^TX^TX\theta -\theta^T X^T \vec{y} - \vec{y} ^TX\theta +\vec{y}^T \vec{y})\\
-&= \frac  12 \nabla_\theta (tr \theta ^TX^TX\theta - 2tr\vec{y} ^T X\theta)\\
-&= \frac  12 (X^TX\theta+X^TX\theta-2X^T\vec{y}) \\
-&= X^TX\theta-X^T\vec{y}\\
+\eta & = \mu \\
+T(y) & = y \\
+a(\eta) & = \mu ^2 /2\\
+& = \eta ^2 /2\\
+b(y) & = (1/ \sqrt {2\pi })exp(-y^2/2)
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-- 第三步，我们用到了一个定理**：一个实数的迹就是这个实数**；
+指数分布族里面还有很多其他的分布：
 
-- 第四步用到了  <img src="https://www.zhihu.com/equation?tex=trA = trA^T" alt="trA = trA^T" class="ee_img tr_noresize" eeimg="1">  这个定理，常数项求导被消去；
-- 第五步用到了等式 <img src="https://www.zhihu.com/equation?tex=(5)" alt="(5)" class="ee_img tr_noresize" eeimg="1"> ，其中  <img src="https://www.zhihu.com/equation?tex=A^T =\theta, B=B^T =X^TX, C=I" alt="A^T =\theta, B=B^T =X^TX, C=I" class="ee_img tr_noresize" eeimg="1"> ,还用到了等式  <img src="https://www.zhihu.com/equation?tex=(1)" alt="(1)" class="ee_img tr_noresize" eeimg="1"> 。
-- 要让  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  取得最小值，就设导数为  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1">  ，然后就得到了下面的**法线方程（normal equations）：**
+- 例如多项式分布（multinomial），这个后面我们会看到；
 
+  ![img](https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/1286166-20181005221317144-192738256.png)
 
-<img src="https://www.zhihu.com/equation?tex=X^TX\theta =X^T\vec{y}
-" alt="X^TX\theta =X^T\vec{y}
-" class="ee_img tr_noresize" eeimg="1">
+- 泊松分布（Poisson），用于对计数类数据进行建模，后面在问题集里面也会看到；
 
-所以让  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1">  取值最小的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  就是
+   <img src="https://www.zhihu.com/equation?tex=P(x=k)=\frac{\lambda ^k}{k!}e^{-\lambda}(k=1,2,3……)" alt="P(x=k)=\frac{\lambda ^k}{k!}e^{-\lambda}(k=1,2,3……)" class="ee_img tr_noresize" eeimg="1"> 
 
+- 伽马和指数分布（the gamma and the exponential），这个用于对连续的、非负的随机变量进行建模，例如时间间隔；
 
-<img src="https://www.zhihu.com/equation?tex=\theta = (X^TX)^{-1}X^T\vec{y}
-" alt="\theta = (X^TX)^{-1}X^T\vec{y}
-" class="ee_img tr_noresize" eeimg="1">
+- 贝塔和狄利克雷分布（the beta and the Dirichlet），这个是用于概率的分布；
 
-如果使用正则方法求 <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1"> 的最小值，根据这个公式就可以直接求得，使用Matlab或者Python可以很快得到结果，是实际应用中比较常规的一种方法。
+  
 
-#### 3 概率解释（Probabilistic interpretation）
+在下一节我们就来讲一讲对于建模的一个更通用的“方案”，其中的 <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  （给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> ）可以是上面这些分布中的任意一种。
 
-在解决回归问题的时候，可能有这样的疑问，那就是为什么选择线性回归，尤其是为什么选择最小二乘法作为成本函数  <img src="https://www.zhihu.com/equation?tex=J" alt="J" class="ee_img tr_noresize" eeimg="1">  ？在本节里，我们会给出一系列的概率基本假设，基于这些假设，就可以推出最小二乘法回归是一种非常自然的算法。
+#### 9 构建广义线性模型（Constructing GLMs）
 
-首先假设目标变量和输入值存在下面这种等量关系：
+设想你要构建一个模型来估计在给定时间段内光顾你开的商店的顾客人数（或者是你的知乎主页的被访问次数），选择的特征  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  可以是商店的促销力度、最近的广告推送、天气等等。泊松分布（Poisson distribution）通常适合用来对访客数目进行建模。知道了这一点之后，怎么来建立一个模型来解决咱们这个具体问题呢？非常幸运的是，泊松分布是属于指数分布族的一个分布，我们可以对该问题建立广义线性模型（Generalized Linear Model，缩写为 GLM）。在本节中，我们会讲一种针对刚刚这类问题构建广义线性模型的方法。
 
+进一步泛化，设想一个分类或者回归问题，要预测一些随机变量  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的值，作为  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的一个函数。要导出适用于这个问题的广义线性模型，就要对我们的模型、给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  下  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的条件分布来做出以下三个假设：
 
-<img src="https://www.zhihu.com/equation?tex=y^{(i)}=\theta^T x^{(i)}+ \epsilon ^{(i)}
-" alt="y^{(i)}=\theta^T x^{(i)}+ \epsilon ^{(i)}
-" class="ee_img tr_noresize" eeimg="1">
+1.	 <img src="https://www.zhihu.com/equation?tex=y | x; \theta ∼ Exponential Family(\eta)" alt="y | x; \theta ∼ Exponential Family(\eta)" class="ee_img tr_noresize" eeimg="1"> ，即给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=\theta, y" alt="\theta, y" class="ee_img tr_noresize" eeimg="1">  的分布属于指数分布族，是一个参数为  <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  的指数分布。——假设1
+2.	给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1"> ，目的是要预测对应这个给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的  <img src="https://www.zhihu.com/equation?tex=T(y)" alt="T(y)" class="ee_img tr_noresize" eeimg="1">  的期望值。咱们的例子中绝大部分情况都是  <img src="https://www.zhihu.com/equation?tex=T(y) = y" alt="T(y) = y" class="ee_img tr_noresize" eeimg="1"> ，这也就意味着我们的学习假设  <img src="https://www.zhihu.com/equation?tex=h" alt="h" class="ee_img tr_noresize" eeimg="1">  输出的预测值  <img src="https://www.zhihu.com/equation?tex=h(x)" alt="h(x)" class="ee_img tr_noresize" eeimg="1">  要满足  <img src="https://www.zhihu.com/equation?tex=h(x) = E[y|x]" alt="h(x) = E[y|x]" class="ee_img tr_noresize" eeimg="1"> 。 （注意，这个假设通过对  <img src="https://www.zhihu.com/equation?tex=h_\theta(x)" alt="h_\theta(x)" class="ee_img tr_noresize" eeimg="1">  的选择而满足，在逻辑回归和线性回归中都是如此。例如在逻辑回归中，  <img src="https://www.zhihu.com/equation?tex=h_\theta (x) = [p (y = 1|x; \theta)] =[ 0 \cdot p (y = 0|x; \theta)+1\cdot p(y = 1|x;\theta)] = E[y|x;\theta]" alt="h_\theta (x) = [p (y = 1|x; \theta)] =[ 0 \cdot p (y = 0|x; \theta)+1\cdot p(y = 1|x;\theta)] = E[y|x;\theta]" class="ee_img tr_noresize" eeimg="1"> 。**译者注：这里的 <img src="https://www.zhihu.com/equation?tex=E[y|x" alt="E[y|x" class="ee_img tr_noresize" eeimg="1"> ]应该就是对给定 <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1"> 时的 <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1"> 值的期望的意思。**）——假设2
+3.	自然参数  <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  和输入值  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  是线性相关的， <img src="https://www.zhihu.com/equation?tex=\eta = \theta^T x" alt="\eta = \theta^T x" class="ee_img tr_noresize" eeimg="1"> ，或者如果  <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  是有值的向量，则有 <img src="https://www.zhihu.com/equation?tex=\eta_i = \theta_i^T x" alt="\eta_i = \theta_i^T x" class="ee_img tr_noresize" eeimg="1"> 。——假设3
 
-上式中  <img src="https://www.zhihu.com/equation?tex= \epsilon ^{(i)}" alt=" \epsilon ^{(i)}" class="ee_img tr_noresize" eeimg="1">  是误差项，用于表征建模训练结果所忽略的输入变量导致的效果 （比如可能某些特征对于房价的影响很明显，但我们做回归的时候忽略掉了）或者一些随机的噪音信息（random noise）。为方便研究，假设  <img src="https://www.zhihu.com/equation?tex= \epsilon ^{(i)}" alt=" \epsilon ^{(i)}" class="ee_img tr_noresize" eeimg="1"> 是独立同分布的，服从高斯分布（Gaussian distribution ，也叫正态分布 Normal distribution），其均值为  <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1"> ，方差（variance）为  <img src="https://www.zhihu.com/equation?tex=\sigma ^2" alt="\sigma ^2" class="ee_img tr_noresize" eeimg="1"> 。这样就可以把这个假设写成  <img src="https://www.zhihu.com/equation?tex= \epsilon ^{(i)} ∼ N (0, \sigma ^2)" alt=" \epsilon ^{(i)} ∼ N (0, \sigma ^2)" class="ee_img tr_noresize" eeimg="1">  。然后  <img src="https://www.zhihu.com/equation?tex= \epsilon ^{(i)} " alt=" \epsilon ^{(i)} " class="ee_img tr_noresize" eeimg="1">   的密度函数就是：
+上面的几个假设中，第三个可能看上去证明得最差，所以也更适合把这第三个假设看作是一个我们在设计广义线性模型时候的一种 **“设计选择 design choice”**，而不是一个假设。那么这三个假设/设计，就可以用来推导出一个非常合适的学习算法类别，也就是广义线性模型 GLMs，这个模型有很多特别友好又理想的性质，比如很容易学习。此外，这类模型对一些关于  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的分布的不同类型建模来说通常效率都很高；例如，我们下面就将要简单介绍一些逻辑回归以及普通最小二乘法这两者如何作为广义线性模型来推出。
 
-
-<img src="https://www.zhihu.com/equation?tex=p(\epsilon ^{(i)} )= \frac 1{\sqrt{2\pi}\sigma} exp (- \frac  {(\epsilon ^{(i)} )^2}{2\sigma^2})
-" alt="p(\epsilon ^{(i)} )= \frac 1{\sqrt{2\pi}\sigma} exp (- \frac  {(\epsilon ^{(i)} )^2}{2\sigma^2})
-" class="ee_img tr_noresize" eeimg="1">
-
-这意味着存在下面的等量关系：
+##### 9.1 普通最小二乘法（Ordinary Least Squares）
 
 
-<img src="https://www.zhihu.com/equation?tex=p(y ^{(i)} |x^{(i)}; \theta)= \frac 1{\sqrt{2\pi}\sigma} exp (- \frac  {(y^{(i)} -\theta^T x ^{(i)} )^2}{2\sigma^2})
-" alt="p(y ^{(i)} |x^{(i)}; \theta)= \frac 1{\sqrt{2\pi}\sigma} exp (- \frac  {(y^{(i)} -\theta^T x ^{(i)} )^2}{2\sigma^2})
-" class="ee_img tr_noresize" eeimg="1">
-
-这里的记号  <img src="https://www.zhihu.com/equation?tex=“p(y ^{(i)} |x^{(i)}; \theta)”" alt="“p(y ^{(i)} |x^{(i)}; \theta)”" class="ee_img tr_noresize" eeimg="1">  表示的是这是一个对于给定  <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1">  时  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  的分布，用 <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  代表该分布的参数。 注意这里不能用  <img src="https://www.zhihu.com/equation?tex=\theta(“p(y ^{(i)} |x^{(i)},\theta)”)" alt="\theta(“p(y ^{(i)} |x^{(i)},\theta)”)" class="ee_img tr_noresize" eeimg="1"> 来当做条件，因为  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  并不是一个随机变量。这个  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">   的分布还可以写成 <img src="https://www.zhihu.com/equation?tex=y^{(i)} | x^{(i)}; \theta ∼ N (\theta ^T x^{(i)}, \sigma^2)" alt="y^{(i)} | x^{(i)}; \theta ∼ N (\theta ^T x^{(i)}, \sigma^2)" class="ee_img tr_noresize" eeimg="1"> 。
-
-给定一个设计矩阵（design matrix） <img src="https://www.zhihu.com/equation?tex=X" alt="X" class="ee_img tr_noresize" eeimg="1"> ，其包含了所有的 <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1"> ，然后再给定  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> ，那么  <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  的分布是什么？数据的概率以 <img src="https://www.zhihu.com/equation?tex=p (\vec{y}|X;\theta )" alt="p (\vec{y}|X;\theta )" class="ee_img tr_noresize" eeimg="1">  的形式给出。在 <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> 取某个固定值的情况下，这个等式通常可以看做是一个  <img src="https://www.zhihu.com/equation?tex=\vec{y}" alt="\vec{y}" class="ee_img tr_noresize" eeimg="1">  的函数（也可以看成是  <img src="https://www.zhihu.com/equation?tex=X" alt="X" class="ee_img tr_noresize" eeimg="1">  的函数）。当我们要把它当做  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的函数的时候，就称它为 **似然**函数（likelihood function)
-
-
-<img src="https://www.zhihu.com/equation?tex=L(\theta) =L(\theta;X,\vec{y})=p(\vec{y}|X;\theta)
-" alt="L(\theta) =L(\theta;X,\vec{y})=p(\vec{y}|X;\theta)
-" class="ee_img tr_noresize" eeimg="1">
-
-结合之前对  <img src="https://www.zhihu.com/equation?tex=\epsilon^{(i)}" alt="\epsilon^{(i)}" class="ee_img tr_noresize" eeimg="1">  的独立性假设 （这里对 <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  以及给定的  <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1">  也都做同样假设），就可以把上面这个等式改写成下面的形式：
+我们这一节要讲的是普通最小二乘法实际上是广义线性模型中的一种特例，设想如下的背景设置：目标变量  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1"> （在广义线性模型的术语也叫做**响应变量response variable**）是连续的，然后我们将给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的分布以高斯分布  <img src="https://www.zhihu.com/equation?tex=N(\mu, \sigma^2)" alt="N(\mu, \sigma^2)" class="ee_img tr_noresize" eeimg="1">  来建模，其中  <img src="https://www.zhihu.com/equation?tex=\mu" alt="\mu" class="ee_img tr_noresize" eeimg="1">  可以是依赖  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的一个函数。这样，我们就让上面的 <img src="https://www.zhihu.com/equation?tex=ExponentialFamily(\eta)" alt="ExponentialFamily(\eta)" class="ee_img tr_noresize" eeimg="1"> 分布成为了一个高斯分布。在前面内容中我们提到过，在把高斯分布写成指数分布族的分布的时候，有 <img src="https://www.zhihu.com/equation?tex=\mu = \eta" alt="\mu = \eta" class="ee_img tr_noresize" eeimg="1"> 。所以就能得到下面的等式：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-L(\theta) &=\prod ^m _{i=1}p(y^{(i)}|x^{(i)};\theta)\\
-&=\prod ^m _{i=1} \frac  1{\sqrt{2\pi}\sigma} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\\
+h_\theta(x)& = E[y|x;\theta] \\
+& = \mu \\
+& = \eta \\
+& = \theta^Tx\\
 \end{aligned}
 " alt="\begin{aligned}
-L(\theta) &=\prod ^m _{i=1}p(y^{(i)}|x^{(i)};\theta)\\
-&=\prod ^m _{i=1} \frac  1{\sqrt{2\pi}\sigma} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\\
+h_\theta(x)& = E[y|x;\theta] \\
+& = \mu \\
+& = \eta \\
+& = \theta^Tx\\
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-现在，给定了 <img src="https://www.zhihu.com/equation?tex=y^{(i)}" alt="y^{(i)}" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=x^{(i)}" alt="x^{(i)}" class="ee_img tr_noresize" eeimg="1"> 之间关系的概率模型了，用什么方法来选择咱们对参数  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的最佳猜测呢？最大似然法（maximum likelihood）告诉我们要选择能让数据的似然函数尽可能大的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> 。也就是说，咱们要找的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  能够让函数  <img src="https://www.zhihu.com/equation?tex=L(\theta)" alt="L(\theta)" class="ee_img tr_noresize" eeimg="1">  取到最大值。
+第一行的等式是基于假设2；第二个等式是基于定理当  <img src="https://www.zhihu.com/equation?tex=y|x; \theta ∼ N (\mu, \sigma ^2)" alt="y|x; \theta ∼ N (\mu, \sigma ^2)" class="ee_img tr_noresize" eeimg="1"> ，则  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的期望就是  <img src="https://www.zhihu.com/equation?tex=\mu" alt="\mu" class="ee_img tr_noresize" eeimg="1">  ；第三个等式是基于假设1，以及之前我们此前将高斯分布写成指数族分布的时候推导出来的性质  <img src="https://www.zhihu.com/equation?tex=\mu = \eta" alt="\mu = \eta" class="ee_img tr_noresize" eeimg="1"> ；最后一个等式就是基于假设3。
 
-除了找到  <img src="https://www.zhihu.com/equation?tex=L(\theta)" alt="L(\theta)" class="ee_img tr_noresize" eeimg="1">  最大值，我们还以对任何严格递增的  <img src="https://www.zhihu.com/equation?tex=L(\theta)" alt="L(\theta)" class="ee_img tr_noresize" eeimg="1">  的函数求最大值。如果我们不直接使用  <img src="https://www.zhihu.com/equation?tex=L(\theta)" alt="L(\theta)" class="ee_img tr_noresize" eeimg="1"> ，而是使用对数函数，来找**对数似然函数  <img src="https://www.zhihu.com/equation?tex=l(\theta)" alt="l(\theta)" class="ee_img tr_noresize" eeimg="1"> ** 的最大值，那这样对于求导来说就简单了一些：
+##### 9.2 逻辑回归（Logistic Regression）
+
+接下来咱们再来看看逻辑回归。这里还是以二值化分类问题为例，也就是  <img src="https://www.zhihu.com/equation?tex=y \in \{0, 1\}" alt="y \in \{0, 1\}" class="ee_img tr_noresize" eeimg="1"> 。给定了 <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  是一个二选一的值，那么很自然就选择伯努利分布（Bernoulli distribution）来对给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的分布进行建模了。在我们把伯努利分布写成一种指数族分布的时候，有  <img src="https://www.zhihu.com/equation?tex=\phi = 1/ (1 + e^{−\eta})" alt="\phi = 1/ (1 + e^{−\eta})" class="ee_img tr_noresize" eeimg="1"> 。另外还要注意的是，如果有  <img src="https://www.zhihu.com/equation?tex=y|x; \theta ∼ Bernoulli(\phi)" alt="y|x; \theta ∼ Bernoulli(\phi)" class="ee_img tr_noresize" eeimg="1"> ，那么  <img src="https://www.zhihu.com/equation?tex=E [y|x; \theta] = \phi" alt="E [y|x; \theta] = \phi" class="ee_img tr_noresize" eeimg="1"> 。所以就跟刚刚推导普通最小二乘法的过程类似，有以下等式：
 
 
 <img src="https://www.zhihu.com/equation?tex=\begin{aligned}
-l(\theta) &=\log L(\theta)\\
-&=\log \prod ^m _{i=1} \frac  1{\sqrt{2\pi}\sigma} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\\
-&= \sum ^m _{i=1}log \frac  1{\sqrt{2\pi}\sigma} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\\
-&= m \log \frac  1{\sqrt{2\pi}\sigma}- \frac 1{\sigma^2}\cdot \frac 12 \sum^m_{i=1} (y^{(i)}-\theta^Tx^{(i)})^2\\
+h_\theta(x)& = E[y|x;\theta] \\
+& = \phi \\
+& = 1/(1+ e^{-\eta}) \\
+& = 1/(1+ e^{-\theta^Tx})\\
 \end{aligned}
 " alt="\begin{aligned}
-l(\theta) &=\log L(\theta)\\
-&=\log \prod ^m _{i=1} \frac  1{\sqrt{2\pi}\sigma} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\\
-&= \sum ^m _{i=1}log \frac  1{\sqrt{2\pi}\sigma} exp(- \frac {(y^{(i)}-\theta^T x^{(i)})^2}{2\sigma^2})\\
-&= m \log \frac  1{\sqrt{2\pi}\sigma}- \frac 1{\sigma^2}\cdot \frac 12 \sum^m_{i=1} (y^{(i)}-\theta^Tx^{(i)})^2\\
+h_\theta(x)& = E[y|x;\theta] \\
+& = \phi \\
+& = 1/(1+ e^{-\eta}) \\
+& = 1/(1+ e^{-\theta^Tx})\\
 \end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
-因此，对  <img src="https://www.zhihu.com/equation?tex=l(\theta)" alt="l(\theta)" class="ee_img tr_noresize" eeimg="1">  取得最大值也就意味着下面这个子式取到最小值：
+所以，上面的等式就给了给了假设函数的形式： <img src="https://www.zhihu.com/equation?tex=h_\theta(x) = 1/ (1 + e^{−\theta^T x})" alt="h_\theta(x) = 1/ (1 + e^{−\theta^T x})" class="ee_img tr_noresize" eeimg="1"> 。如果你之前好奇咱们是怎么想出来逻辑回归的函数为 <img src="https://www.zhihu.com/equation?tex=1/ (1 + e^{−z} )" alt="1/ (1 + e^{−z} )" class="ee_img tr_noresize" eeimg="1"> ，这个就是一种解答：一旦我们假设以  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  为条件的  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的分布是伯努利分布，那么根据广义线性模型和指数分布族的定义，就会得出这个式子。
+
+再解释一点术语，这里给出分布均值的函数  <img src="https://www.zhihu.com/equation?tex=g" alt="g" class="ee_img tr_noresize" eeimg="1">  是一个关于自然参数的函数， <img src="https://www.zhihu.com/equation?tex=g(\eta) = E[T(y); \eta]" alt="g(\eta) = E[T(y); \eta]" class="ee_img tr_noresize" eeimg="1"> ，这个函数也叫做**规范响应函数（canonical response function），** 它的反函数  <img src="https://www.zhihu.com/equation?tex=g^{−1}" alt="g^{−1}" class="ee_img tr_noresize" eeimg="1">  叫做**规范链接函数（canonical link function）。** 因此，对于高斯分布来说，它的规范响应函数正好就是识别函数（identify function）；而对于伯努利分布来说，它的规范响应函数则是逻辑函数（logistic function）。 <img src="https://www.zhihu.com/equation?tex=^7" alt="^7" class="ee_img tr_noresize" eeimg="1"> 
+
+>7 很多教科书用  <img src="https://www.zhihu.com/equation?tex=g" alt="g" class="ee_img tr_noresize" eeimg="1">  表示链接函数，而用反函数 <img src="https://www.zhihu.com/equation?tex=g^{−1}" alt="g^{−1}" class="ee_img tr_noresize" eeimg="1">  来表示响应函数；但是咱们这里用的是反过来的，这是继承了早期的机器学习中的用法，我们这样使用和后续的其他课程能够更好地衔接起来。
+
+##### 9.3 Softmax 回归
 
 
-<img src="https://www.zhihu.com/equation?tex=\frac 12 \sum^m _{i=1} (y^{(i)}-\theta^Tx^{(i)})^2
-" alt="\frac 12 \sum^m _{i=1} (y^{(i)}-\theta^Tx^{(i)})^2
+咱们再来看一个广义线性模型的例子吧。设想有这样的一个分类问题，其中响应变量  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的取值可以是  <img src="https://www.zhihu.com/equation?tex=k" alt="k" class="ee_img tr_noresize" eeimg="1">  个值当中的任意一个，也就是  <img src="https://www.zhihu.com/equation?tex=y \in \{1, 2, ..., k\}" alt="y \in \{1, 2, ..., k\}" class="ee_img tr_noresize" eeimg="1"> 。例如，我们这次要进行的分类就比把邮件分成垃圾邮件和正常邮件两类这种二值化分类要更加复杂一些，比如可能是要分成三类，例如垃圾邮件、个人邮件、工作相关邮件。这样响应变量依然还是离散的，但取值就不只有两个了。这时可以选用多项式分布（multinomial distribution）来进行建模。
+
+下面咱们就通过这种多项式分布来推出一个广义线性模型。要实现这一目的，首先还是要把多项式分布也用指数族分布来进行描述。
+
+要对一个可能有  <img src="https://www.zhihu.com/equation?tex=k" alt="k" class="ee_img tr_noresize" eeimg="1">  个不同输出值的多项式进行参数化，就可以用  <img src="https://www.zhihu.com/equation?tex=k" alt="k" class="ee_img tr_noresize" eeimg="1">  个参数  <img src="https://www.zhihu.com/equation?tex=\phi_1,...,\phi_ k" alt="\phi_1,...,\phi_ k" class="ee_img tr_noresize" eeimg="1">  来对应各自输出值的概率。不过这样参数可能过多，形式上也太麻烦，他们未必都是互相独立的（比如对于任意一个 <img src="https://www.zhihu.com/equation?tex=\phi_ i" alt="\phi_ i" class="ee_img tr_noresize" eeimg="1"> 中的值来说，只要知道其他的  <img src="https://www.zhihu.com/equation?tex=k-1" alt="k-1" class="ee_img tr_noresize" eeimg="1">  个值，就能知道这最后一个了，因为总和等于 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> ，也就是 <img src="https://www.zhihu.com/equation?tex=\sum^k_{i=1} \phi_i = 1" alt="\sum^k_{i=1} \phi_i = 1" class="ee_img tr_noresize" eeimg="1"> ）。所以咱们就去掉一个参数，只用  <img src="https://www.zhihu.com/equation?tex=k-1" alt="k-1" class="ee_img tr_noresize" eeimg="1">  个： <img src="https://www.zhihu.com/equation?tex=\phi_1,...,\phi_ {k-1}" alt="\phi_1,...,\phi_ {k-1}" class="ee_img tr_noresize" eeimg="1">   来对多项式进行参数化，其中 <img src="https://www.zhihu.com/equation?tex=\phi_i = p (y = i; \phi)，p (y = k; \phi) = 1 −\sum ^{k−1}_{i=1}\phi_ i" alt="\phi_i = p (y = i; \phi)，p (y = k; \phi) = 1 −\sum ^{k−1}_{i=1}\phi_ i" class="ee_img tr_noresize" eeimg="1"> 。为了表述起来方便，我们还要设  <img src="https://www.zhihu.com/equation?tex=\phi_k = 1 − \sum_{i=1}^{k−1} \phi_i" alt="\phi_k = 1 − \sum_{i=1}^{k−1} \phi_i" class="ee_img tr_noresize" eeimg="1"> ，但一定要注意，这个并不是一个参数，而是完全由其他的  <img src="https://www.zhihu.com/equation?tex=k-1" alt="k-1" class="ee_img tr_noresize" eeimg="1">  个参数来确定的一个值。
+
+要把一个多项式表达成为指数组分布，还要按照下面的方式定义一个  <img src="https://www.zhihu.com/equation?tex=T (y) \in R^{k−1}" alt="T (y) \in R^{k−1}" class="ee_img tr_noresize" eeimg="1"> :
+
+
+<img src="https://www.zhihu.com/equation?tex=T(1)=
+    \begin{bmatrix}
+      1\\
+      0\\
+	  0\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+T(2)=
+    \begin{bmatrix}
+      0\\
+      1\\
+	  0\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+T(3)=
+    \begin{bmatrix}
+      0\\
+      0\\
+	  1\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+T(k-1)=
+    \begin{bmatrix}
+      0\\
+      0\\
+	  0\\
+	  \vdots \\
+	  1\\
+    \end{bmatrix},
+T(k)=
+    \begin{bmatrix}
+      0\\
+      0\\
+	  0\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+" alt="T(1)=
+    \begin{bmatrix}
+      1\\
+      0\\
+	  0\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+T(2)=
+    \begin{bmatrix}
+      0\\
+      1\\
+	  0\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+T(3)=
+    \begin{bmatrix}
+      0\\
+      0\\
+	  1\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
+T(k-1)=
+    \begin{bmatrix}
+      0\\
+      0\\
+	  0\\
+	  \vdots \\
+	  1\\
+    \end{bmatrix},
+T(k)=
+    \begin{bmatrix}
+      0\\
+      0\\
+	  0\\
+	  \vdots \\
+	  0\\
+    \end{bmatrix},
 " class="ee_img tr_noresize" eeimg="1">
 
-到这里我们能发现这个子式实际上就是  <img src="https://www.zhihu.com/equation?tex=J(\theta)" alt="J(\theta)" class="ee_img tr_noresize" eeimg="1"> ，也就是最原始的最小二乘成本函数（least-squares cost function）。
+这次和之前的样例都不一样了，就是不再有  <img src="https://www.zhihu.com/equation?tex=T(y) = y" alt="T(y) = y" class="ee_img tr_noresize" eeimg="1"> ；然后， <img src="https://www.zhihu.com/equation?tex=T(y)" alt="T(y)" class="ee_img tr_noresize" eeimg="1">  现在是一个  <img src="https://www.zhihu.com/equation?tex=k – 1" alt="k – 1" class="ee_img tr_noresize" eeimg="1">  维的向量，而不是一个实数了。向量  <img src="https://www.zhihu.com/equation?tex=T(y)" alt="T(y)" class="ee_img tr_noresize" eeimg="1">  中的第  <img src="https://www.zhihu.com/equation?tex=i" alt="i" class="ee_img tr_noresize" eeimg="1">  个元素写成 <img src="https://www.zhihu.com/equation?tex=(T(y))_i" alt="(T(y))_i" class="ee_img tr_noresize" eeimg="1">  。
 
-总结一下也就是：在对数据进行概率假设的基础上，最小二乘回归得到的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  和最大似然法估计的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  是一致的。所以这是一系列的假设，其前提是认为最小二乘回归（least-squares regression）能够被判定为一种非常自然的方法，这种方法正好就进行了最大似然估计（maximum likelihood estimation）。（要注意，对于验证最小二乘法是否为一个良好并且合理的过程来说，这些概率假设并不是必须的，此外可能（也确实）有其他的自然假设能够用来评判最小二乘方法。）
+现在介绍一种非常有用的记号。指示函数（indicator function） <img src="https://www.zhihu.com/equation?tex=1\{\cdot  \}" alt="1\{\cdot  \}" class="ee_img tr_noresize" eeimg="1"> ，如果参数为真，则等于 <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> ；反之则等于 <img src="https://www.zhihu.com/equation?tex=0" alt="0" class="ee_img tr_noresize" eeimg="1"> （ <img src="https://www.zhihu.com/equation?tex=1\{True\} = 1, 1\{False\} = 0" alt="1\{True\} = 1, 1\{False\} = 0" class="ee_img tr_noresize" eeimg="1"> ）。例如 <img src="https://www.zhihu.com/equation?tex=1\{2 = 3\} = 0" alt="1\{2 = 3\} = 0" class="ee_img tr_noresize" eeimg="1"> , 而 <img src="https://www.zhihu.com/equation?tex=1\{3 = 5 − 2\} = 1" alt="1\{3 = 5 − 2\} = 1" class="ee_img tr_noresize" eeimg="1"> 。所以我们可以把 <img src="https://www.zhihu.com/equation?tex=T(y)" alt="T(y)" class="ee_img tr_noresize" eeimg="1">  和  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的关系写成   <img src="https://www.zhihu.com/equation?tex=(T(y))_i = 1\{y = i\}" alt="(T(y))_i = 1\{y = i\}" class="ee_img tr_noresize" eeimg="1"> 。（往下继续阅读之前，一定要确保你理解了这里的表达式为真！）在此基础上，就有了 <img src="https://www.zhihu.com/equation?tex=E[(T(y))_i] = P (y = i) = \phi_i" alt="E[(T(y))_i] = P (y = i) = \phi_i" class="ee_img tr_noresize" eeimg="1"> 。
 
-另外还要注意，在刚才的讨论中，我们最终对  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的选择并不依赖  <img src="https://www.zhihu.com/equation?tex=\sigma^2" alt="\sigma^2" class="ee_img tr_noresize" eeimg="1"> ，而且也确实在不知道  <img src="https://www.zhihu.com/equation?tex=\sigma^2" alt="\sigma^2" class="ee_img tr_noresize" eeimg="1">  的情况下就已经找到了结果。稍后我们还要对这个情况加以利用，到时候我们会讨论指数族以及广义线性模型。
-
-#### 4 局部加权线性回归（Locally weighted linear regression）
-
-假如问题还是根据从实数域内取值的  <img src="https://www.zhihu.com/equation?tex=x\in R" alt="x\in R" class="ee_img tr_noresize" eeimg="1">  来预测  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  。左下角的图显示了使用  <img src="https://www.zhihu.com/equation?tex=y = \theta_0 + \theta_1x" alt="y = \theta_0 + \theta_1x" class="ee_img tr_noresize" eeimg="1">  来对一个数据集进行拟合。我们明显能看出来这个数据的趋势并不是一条严格的直线，所以用直线进行的拟合就不是好的方法。
-
-<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/cs229-notes1/cs229note1f5.png" alt="cs229note1f5" style="zoom:67%;" />
-
-如果不用直线，而增加一个二次项，用 <img src="https://www.zhihu.com/equation?tex=y = \theta_0 + \theta_1x +\theta_2x^2" alt="y = \theta_0 + \theta_1x +\theta_2x^2" class="ee_img tr_noresize" eeimg="1">  来拟合。（中间的图）很明显，我们对特征补充后，拟合效果变好了，因此适度的增加特征可以提高模型的效果。不过，增加太多特征也会造成麻烦：最右边的图就是使用了五次多项式  <img src="https://www.zhihu.com/equation?tex=y = \sum^5_{j=0} \theta_jx^j" alt="y = \sum^5_{j=0} \theta_jx^j" class="ee_img tr_noresize" eeimg="1">  来进行拟合。看图可以发现，虽然这个拟合曲线完美地通过了所有当前数据集中的数据，但我们明显不能认为这个曲线是一个合适的预测工具，这样过拟合的曲线很难作出正确的预测，因为当给出其他的房屋数据时，它对房屋价格的估计会偏差很大。在图中甚至出现了后半段房屋面积越大价格越低的情况。
-
-最左边的图像就是一个**欠拟合(under fitting)** 的例子，比如明显能看出拟合的模型漏掉了数据集中的结构信息；而最右边的图像就是一个**过拟合(over fitting)** 的例子。（在课程的后续部分中，讨论到关于学习理论的时候，会给出这些概念的标准定义，也会给出拟合程度对于一个猜测的好坏检验的意义。）
-
-正如前文谈到的，也正如上面这个例子展示的，一个学习算法要保证能良好运行，特征的选择是非常重要的。在本节，咱们就简要地讲一下局部加权线性回归（locally weighted linear regression ，缩写为LWR），这个方法是假设有足够多的训练数据，对不太重要的特征进行一些筛选。
-
-在原始版本的线性回归算法中，要对一个查询点  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  进行预测，比如要衡量 <img src="https://www.zhihu.com/equation?tex=h(x)" alt="h(x)" class="ee_img tr_noresize" eeimg="1"> ，要经过下面的步骤：
-
-1. 使用参数  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  进行拟合，让数据集中的值与拟合算出的值的差值平方 <img src="https://www.zhihu.com/equation?tex=\sum_i(y^{(i)} − \theta^T x^{(i)} )^2" alt="\sum_i(y^{(i)} − \theta^T x^{(i)} )^2" class="ee_img tr_noresize" eeimg="1"> 最小(最小二乘法的思想)；
-2. 输出  <img src="https://www.zhihu.com/equation?tex=\theta^T x" alt="\theta^T x" class="ee_img tr_noresize" eeimg="1">  。
-
-相应地，在 LWR 局部加权线性回归方法中，步骤如下：
-
-1. 使用参数  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  进行拟合，让加权距离 <img src="https://www.zhihu.com/equation?tex=\sum_i w^{(i)}(y^{(i)} − \theta^T x^{(i)} )^2" alt="\sum_i w^{(i)}(y^{(i)} − \theta^T x^{(i)} )^2" class="ee_img tr_noresize" eeimg="1">  最小；
-2. 输出  <img src="https://www.zhihu.com/equation?tex=\theta^T x" alt="\theta^T x" class="ee_img tr_noresize" eeimg="1"> 。
+现在一切就绪，可以把多项式写成指数族分布了。写出来如下所示：
 
 
-上面式子中的  <img src="https://www.zhihu.com/equation?tex=w^{(i)}" alt="w^{(i)}" class="ee_img tr_noresize" eeimg="1">  是非负的权值。直观点说就是，如果对应某个 <img src="https://www.zhihu.com/equation?tex=i" alt="i" class="ee_img tr_noresize" eeimg="1">  的权值  <img src="https://www.zhihu.com/equation?tex=w^{(i)}" alt="w^{(i)}" class="ee_img tr_noresize" eeimg="1">  特别大，那么在选择拟合参数  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的时候，就要尽量让这一点的  <img src="https://www.zhihu.com/equation?tex=(y^{(i)} − \theta^T x^{(i)} )^2" alt="(y^{(i)} − \theta^T x^{(i)} )^2" class="ee_img tr_noresize" eeimg="1">  最小。而如果权值 <img src="https://www.zhihu.com/equation?tex=w^{(i)}" alt="w^{(i)}" class="ee_img tr_noresize" eeimg="1">   特别小，那么这一点对应的 <img src="https://www.zhihu.com/equation?tex=(y^{(i)} − \theta^T x^{(i)} )^2" alt="(y^{(i)} − \theta^T x^{(i)} )^2" class="ee_img tr_noresize" eeimg="1">  就基本在拟合过程中忽略掉了。通俗地讲，利用权重筛选出我们想要的特征。
-
-对于权值的选取可以使用下面这个比较标准的公式： <img src="https://www.zhihu.com/equation?tex=^4" alt="^4" class="ee_img tr_noresize" eeimg="1"> 
-
-
-<img src="https://www.zhihu.com/equation?tex=w^{(i)} = exp(- \frac {(x^{(i)}-x)^2}{2\tau^2})
-" alt="w^{(i)} = exp(- \frac {(x^{(i)}-x)^2}{2\tau^2})
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+p(y;\phi) &=\phi_1^{1\{y=1\}}\phi_2^{1\{y=2\}}\dots \phi_k^{1\{y=k\}} \\
+          &=\phi_1^{1\{y=1\}}\phi_2^{1\{y=2\}}\dots \phi_k^{1-\sum_{i=1}^{k-1}1\{y=i\}} \\
+          &=\phi_1^{(T(y))_1}\phi_2^{(T(y))_2}\dots \phi_k^{1-\sum_{i=1}^{k-1}(T(y))_i } \\
+          &=exp((T(y))_1 log(\phi_1)+(T(y))_2 log(\phi_2)+\dots+(1-\sum_{i=1}^{k-1}(T(y))_i)log(\phi_k)) \\
+          &= exp((T(y))_1 log(\frac{\phi_1}{\phi_k})+(T(y))_2 log(\frac{\phi_2}{\phi_k})+\dots+(T(y))_{k-1}log(\frac{\phi_{k-1}}{\phi_k})+log(\phi_k)) \\
+          &=b(y)exp(\eta^T T(y)-a(\eta))
+\end{aligned}
+" alt="\begin{aligned}
+p(y;\phi) &=\phi_1^{1\{y=1\}}\phi_2^{1\{y=2\}}\dots \phi_k^{1\{y=k\}} \\
+          &=\phi_1^{1\{y=1\}}\phi_2^{1\{y=2\}}\dots \phi_k^{1-\sum_{i=1}^{k-1}1\{y=i\}} \\
+          &=\phi_1^{(T(y))_1}\phi_2^{(T(y))_2}\dots \phi_k^{1-\sum_{i=1}^{k-1}(T(y))_i } \\
+          &=exp((T(y))_1 log(\phi_1)+(T(y))_2 log(\phi_2)+\dots+(1-\sum_{i=1}^{k-1}(T(y))_i)log(\phi_k)) \\
+          &= exp((T(y))_1 log(\frac{\phi_1}{\phi_k})+(T(y))_2 log(\frac{\phi_2}{\phi_k})+\dots+(T(y))_{k-1}log(\frac{\phi_{k-1}}{\phi_k})+log(\phi_k)) \\
+          &=b(y)exp(\eta^T T(y)-a(\eta))
+\end{aligned}
 " class="ee_img tr_noresize" eeimg="1">
 
->4 如果  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  是有值的向量，那就要对上面的式子进行泛化，得到的是 <img src="https://www.zhihu.com/equation?tex=w^{(i)} = exp(− \frac {(x^{(i)}-x)^T(x^{(i)}-x)}{2\tau^2})" alt="w^{(i)} = exp(− \frac {(x^{(i)}-x)^T(x^{(i)}-x)}{2\tau^2})" class="ee_img tr_noresize" eeimg="1"> ，或者: <img src="https://www.zhihu.com/equation?tex=w^{(i)} = exp(− \frac {(x^{(i)}-x)^T\Sigma ^{-1}(x^{(i)}-x)}{2})" alt="w^{(i)} = exp(− \frac {(x^{(i)}-x)^T\Sigma ^{-1}(x^{(i)}-x)}{2})" class="ee_img tr_noresize" eeimg="1"> ，这就看是选择用 <img src="https://www.zhihu.com/equation?tex=\tau" alt="\tau" class="ee_img tr_noresize" eeimg="1">  还是  <img src="https://www.zhihu.com/equation?tex=\Sigma" alt="\Sigma" class="ee_img tr_noresize" eeimg="1"> 。
+其中：
 
 
-要注意的是，权值是依赖每个特定的点  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的，而这些点正是我们要去进行预测评估的点。此外，如果  <img src="https://www.zhihu.com/equation?tex=|x^{(i)} − x|" alt="|x^{(i)} − x|" class="ee_img tr_noresize" eeimg="1">  非常小，那么权值  <img src="https://www.zhihu.com/equation?tex=w^{(i)} " alt="w^{(i)} " class="ee_img tr_noresize" eeimg="1"> 就接近  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1"> ；反之如果  <img src="https://www.zhihu.com/equation?tex=|x^{(i)} − x|" alt="|x^{(i)} − x|" class="ee_img tr_noresize" eeimg="1">  非常大，那么权值  <img src="https://www.zhihu.com/equation?tex=w^{(i)} " alt="w^{(i)} " class="ee_img tr_noresize" eeimg="1"> 就变小。所以可以看出，  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  的选择过程中，查询点  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  附近的训练样本有更高得多的权值。（ <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1"> is chosen giving a much higher “weight” to the (errors on) training examples close to the query point x.）（还要注意，当权值的方程的形式跟高斯分布的密度函数比较接近的时候，权值和高斯分布并没有什么直接联系，尤其是当权值不是随机值，且呈现正态分布或者其他形式分布的时候。）随着点 <img src="https://www.zhihu.com/equation?tex=x^{(i)} " alt="x^{(i)} " class="ee_img tr_noresize" eeimg="1">  到查询点  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的距离降低，训练样本的权值的也在降低，参数 <img src="https://www.zhihu.com/equation?tex=\tau" alt="\tau" class="ee_img tr_noresize" eeimg="1">   控制了这个降低的速度； <img src="https://www.zhihu.com/equation?tex=\tau" alt="\tau" class="ee_img tr_noresize" eeimg="1"> 也叫做**带宽参数**，这个也是在你的作业中需要来体验和尝试的一个参数。
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+\eta &= 
+    \begin{bmatrix}
+      \log (\phi _1/\phi _k)\\
+      \log (\phi _2/\phi _k)\\
+	  \vdots \\
+	  \log (\phi _{k-1}/\phi _k)\\
+    \end{bmatrix}, \\
+a(\eta) &= -\log (\phi _k)\\
+b(y) &= 1\\
+\end{aligned}
+" alt="\begin{aligned}
+\eta &= 
+    \begin{bmatrix}
+      \log (\phi _1/\phi _k)\\
+      \log (\phi _2/\phi _k)\\
+	  \vdots \\
+	  \log (\phi _{k-1}/\phi _k)\\
+    \end{bmatrix}, \\
+a(\eta) &= -\log (\phi _k)\\
+b(y) &= 1\\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
 
-局部加权线性回归是咱们接触的第一个**非参数** 算法。而更早之前咱们看到的无权重的线性回归算法就是一种**参数** 学习算法，因为有固定的有限个数的参数（也就是  <img src="https://www.zhihu.com/equation?tex=\theta_i" alt="\theta_i" class="ee_img tr_noresize" eeimg="1">  ），这些参数用来拟合数据。我们对  <img src="https://www.zhihu.com/equation?tex=\theta_i" alt="\theta_i" class="ee_img tr_noresize" eeimg="1">  进行了拟合之后，就把它们存了起来，也就不需要再保留训练数据样本来进行更进一步的预测了。与之相反，如果用局部加权线性回归算法，我们就必须一直保留着整个训练集。这里的非参数算法中的 非参数“non-parametric” 是粗略地指：为了呈现出假设  <img src="https://www.zhihu.com/equation?tex=h" alt="h" class="ee_img tr_noresize" eeimg="1">  随着数据集规模的增长而线性增长，我们需要以一定顺序保存一些数据的规模。（The term “non-parametric” (roughly) refers to the fact that the amount of stuff we need to keep in order to represent the hypothesis h grows linearly with the size of the training set. ）
+这样咱们就把多项式方程作为一个指数族分布来写了出来。
 
-**未完待续**
+与  <img src="https://www.zhihu.com/equation?tex=i (for\quad i = 1, ..., k)" alt="i (for\quad i = 1, ..., k)" class="ee_img tr_noresize" eeimg="1"> 对应的链接函数为：
 
 
+<img src="https://www.zhihu.com/equation?tex=\eta_i =\log \frac  {\phi_i}{\phi_k}
+" alt="\eta_i =\log \frac  {\phi_i}{\phi_k}
+" class="ee_img tr_noresize" eeimg="1">
+
+为了方便起见，我们再定义  <img src="https://www.zhihu.com/equation?tex=\eta_k = \log (\phi_k/\phi_k) = 0" alt="\eta_k = \log (\phi_k/\phi_k) = 0" class="ee_img tr_noresize" eeimg="1"> 。对链接函数取反函数然后推导出响应函数，就得到了下面的等式：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+e^{\eta_i} &= \frac {\phi_i}{\phi_k}\\
+\phi_k e^{\eta_i} &= \phi_i  \qquad\text{(7)}\\
+\phi_k  \sum^k_{i=1} e^{\eta_i}&= \sum^k_{i=1}\phi_i= 1\\
+\end{aligned}
+" alt="\begin{aligned}
+e^{\eta_i} &= \frac {\phi_i}{\phi_k}\\
+\phi_k e^{\eta_i} &= \phi_i  \qquad\text{(7)}\\
+\phi_k  \sum^k_{i=1} e^{\eta_i}&= \sum^k_{i=1}\phi_i= 1\\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+这就说明了 <img src="https://www.zhihu.com/equation?tex=\phi_k = \frac  1 {\sum^k_{i=1} e^{\eta_i}}" alt="\phi_k = \frac  1 {\sum^k_{i=1} e^{\eta_i}}" class="ee_img tr_noresize" eeimg="1"> ，然后可以把这个关系代入回到等式 <img src="https://www.zhihu.com/equation?tex=(7)" alt="(7)" class="ee_img tr_noresize" eeimg="1"> ，这样就得到了响应函数：
+
+
+<img src="https://www.zhihu.com/equation?tex=\phi_i = \frac  { e^{\eta_i} }{ \sum^k_{j=1} e^{\eta_j}}
+" alt="\phi_i = \frac  { e^{\eta_i} }{ \sum^k_{j=1} e^{\eta_j}}
+" class="ee_img tr_noresize" eeimg="1">
+
+上面这个函数从 <img src="https://www.zhihu.com/equation?tex=\eta" alt="\eta" class="ee_img tr_noresize" eeimg="1">  映射到了 <img src="https://www.zhihu.com/equation?tex=\phi" alt="\phi" class="ee_img tr_noresize" eeimg="1"> ，称为 **Softmax** 函数。
+
+要完成我们的建模，还要用到前文提到的假设3，也就是  <img src="https://www.zhihu.com/equation?tex=\eta_i" alt="\eta_i" class="ee_img tr_noresize" eeimg="1">  是一个  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的线性函数。所以就有了  <img src="https://www.zhihu.com/equation?tex=\eta_i= \theta_i^Tx (for\quad i = 1, ..., k − 1)" alt="\eta_i= \theta_i^Tx (for\quad i = 1, ..., k − 1)" class="ee_img tr_noresize" eeimg="1"> ，其中的  <img src="https://www.zhihu.com/equation?tex=\theta_1, ..., \theta_{k−1} \in R^{n+1}" alt="\theta_1, ..., \theta_{k−1} \in R^{n+1}" class="ee_img tr_noresize" eeimg="1">  就是我们建模的参数。为了表述方便，我们这里还是定义 <img src="https://www.zhihu.com/equation?tex=\theta_k = 0" alt="\theta_k = 0" class="ee_img tr_noresize" eeimg="1"> ，这样就有  <img src="https://www.zhihu.com/equation?tex=\eta_k = \theta_k^T x = 0" alt="\eta_k = \theta_k^T x = 0" class="ee_img tr_noresize" eeimg="1"> ，跟前文提到的相符。因此，我们的模型假设了给定  <img src="https://www.zhihu.com/equation?tex=x" alt="x" class="ee_img tr_noresize" eeimg="1">  的  <img src="https://www.zhihu.com/equation?tex=y" alt="y" class="ee_img tr_noresize" eeimg="1">  的条件分布为：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+p(y=i|x;\theta) &=  \phi_i \\
+&= \frac {e^{\eta_i}}{\sum^k_{j=1}e^{\eta_j}}\\
+&=\frac {e^{\theta_i^Tx}}{\sum^k_{j=1}e^{\theta_j^Tx}}\qquad\text{(8)}\\
+\end{aligned}
+" alt="\begin{aligned}
+p(y=i|x;\theta) &=  \phi_i \\
+&= \frac {e^{\eta_i}}{\sum^k_{j=1}e^{\eta_j}}\\
+&=\frac {e^{\theta_i^Tx}}{\sum^k_{j=1}e^{\theta_j^Tx}}\qquad\text{(8)}\\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+这个适用于解决  <img src="https://www.zhihu.com/equation?tex=y \in\{1, ..., k\}" alt="y \in\{1, ..., k\}" class="ee_img tr_noresize" eeimg="1">  的分类问题的模型，就叫做 **Softmax 回归。** 这种回归是对逻辑回归的一种扩展泛化。
+
+假设（hypothesis）  <img src="https://www.zhihu.com/equation?tex=h" alt="h" class="ee_img tr_noresize" eeimg="1">  则如下所示:
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+h_\theta (x) &= E[T(y)|x;\theta]\\
+&= E \left[
+    \begin{array}{cc|c}
+      1(y=1)\\
+      1(y=2)\\
+	  \vdots \\
+	  1(y=k-1)\\
+    \end{array}x;\theta
+\right]\\
+&= E \left[
+    \begin{array}{c}
+      \phi_1\\
+      \phi_2\\
+	  \vdots \\
+	  \phi_{k-1}\\
+    \end{array}
+\right]\\
+&= E \left[
+    \begin{array}{ccc}
+      \frac {exp(\theta_1^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \\
+      \frac {exp(\theta_2^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \\
+	  \vdots \\
+	  \frac {exp(\theta_{k-1}^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \\
+    \end{array}
+\right]\\
+\end{aligned}
+" alt="\begin{aligned}
+h_\theta (x) &= E[T(y)|x;\theta]\\
+&= E \left[
+    \begin{array}{cc|c}
+      1(y=1)\\
+      1(y=2)\\
+	  \vdots \\
+	  1(y=k-1)\\
+    \end{array}x;\theta
+\right]\\
+&= E \left[
+    \begin{array}{c}
+      \phi_1\\
+      \phi_2\\
+	  \vdots \\
+	  \phi_{k-1}\\
+    \end{array}
+\right]\\
+&= E \left[
+    \begin{array}{ccc}
+      \frac {exp(\theta_1^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \\
+      \frac {exp(\theta_2^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \\
+	  \vdots \\
+	  \frac {exp(\theta_{k-1}^Tx)}{\sum^k_{j=1}exp(\theta_j^Tx)} \\
+    \end{array}
+\right]\\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+也就是说，我们的假设函数会对每一个  <img src="https://www.zhihu.com/equation?tex=i = 1,...,k" alt="i = 1,...,k" class="ee_img tr_noresize" eeimg="1">  ，给出  <img src="https://www.zhihu.com/equation?tex=p (y = i|x; \theta)" alt="p (y = i|x; \theta)" class="ee_img tr_noresize" eeimg="1">  概率的估计值。（虽然在前面假设的这个  <img src="https://www.zhihu.com/equation?tex=h_\theta(x)" alt="h_\theta(x)" class="ee_img tr_noresize" eeimg="1">  只有  <img src="https://www.zhihu.com/equation?tex=k-1" alt="k-1" class="ee_img tr_noresize" eeimg="1">  维，但很明显  <img src="https://www.zhihu.com/equation?tex=p (y = k|x; \theta)" alt="p (y = k|x; \theta)" class="ee_img tr_noresize" eeimg="1">  可以通过用  <img src="https://www.zhihu.com/equation?tex=1" alt="1" class="ee_img tr_noresize" eeimg="1">  减去其他所有项目概率的和来得到，即 <img src="https://www.zhihu.com/equation?tex=1− \sum^{k-1}_{i=1}\phi_i" alt="1− \sum^{k-1}_{i=1}\phi_i" class="ee_img tr_noresize" eeimg="1"> 。）
+
+最后，我们再来谈一下参数拟合。和我们之前对普通最小二乘线性回归和逻辑回归的原始推导类似，如果咱们有一个有  <img src="https://www.zhihu.com/equation?tex=m" alt="m" class="ee_img tr_noresize" eeimg="1">  个训练样本的训练集  <img src="https://www.zhihu.com/equation?tex=\{(x^{(i)}, y^{(i)}); i = 1, ..., m\}" alt="\{(x^{(i)}, y^{(i)}); i = 1, ..., m\}" class="ee_img tr_noresize" eeimg="1"> ，然后要研究这个模型的参数  <img src="https://www.zhihu.com/equation?tex=\theta_i" alt="\theta_i" class="ee_img tr_noresize" eeimg="1">  ，我们可以先写出其似然函数的对数：
+
+
+<img src="https://www.zhihu.com/equation?tex=\begin{aligned}
+l(\theta)& =\sum^m_{i=1} \log p(y^{(i)}|x^{(i)};\theta)\\
+&= \sum^m_{i=1}log\prod ^k_{l=1}(\frac {e^{\theta_l^Tx^{(i)}}}{\sum^k_{j=1} e^{\theta_j^T x^{(i)}}})^{1(y^{(i)}=l)}\\
+\end{aligned}
+" alt="\begin{aligned}
+l(\theta)& =\sum^m_{i=1} \log p(y^{(i)}|x^{(i)};\theta)\\
+&= \sum^m_{i=1}log\prod ^k_{l=1}(\frac {e^{\theta_l^Tx^{(i)}}}{\sum^k_{j=1} e^{\theta_j^T x^{(i)}}})^{1(y^{(i)}=l)}\\
+\end{aligned}
+" class="ee_img tr_noresize" eeimg="1">
+
+要得到上面等式的第二行，要用到等式 <img src="https://www.zhihu.com/equation?tex=(8)" alt="(8)" class="ee_img tr_noresize" eeimg="1"> 中的设定  <img src="https://www.zhihu.com/equation?tex=p(y|x; \theta)" alt="p(y|x; \theta)" class="ee_img tr_noresize" eeimg="1"> 。现在就可以通过对  <img src="https://www.zhihu.com/equation?tex=l(\theta)" alt="l(\theta)" class="ee_img tr_noresize" eeimg="1">  取最大值得到的  <img src="https://www.zhihu.com/equation?tex=\theta" alt="\theta" class="ee_img tr_noresize" eeimg="1">  而得到对参数的最大似然估计，使用的方法就可以用梯度上升法或者牛顿法了。
 
 ## 参考链接
 
