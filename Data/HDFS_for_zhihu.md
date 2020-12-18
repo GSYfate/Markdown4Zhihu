@@ -34,7 +34,7 @@ HDFS是一个主从体系结构，它由四部分组成，分别是HDFS Client�
 
 一个HDFS集群是由一个Namenode和一定数目的Datanodes组成。Namenode是一个中心服务器，负责构建命名空间和管理文件的元数据。集群中的Datanode一般是一个节点一个，负责管理它所在节点上的存储。HDFS暴露了文件系统的名字空间，用户能够以文件的形式在上面存储数据。从内部看，一个文件其实被分成一个或多个数据块，这些块存储在一组Datanode上。Namenode执行文件系统的名字空间操作，比如打开、关闭、重命名文件或目录。它也负责确定数据块到具体Datanode节点的映射。Datanode负责处理文件系统客户端的读写请求。在Namenode的统一调度下进行数据块的创建、删除和复制。
 
-<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/HDFS/hdfsarchitecture.gif" style="zoom:67%;" />
+<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/HDFS/hdfsarchitecture-1608308196876.gif" style="zoom:67%;" />
 
 #### 3.1 Blocks
 
@@ -80,7 +80,7 @@ Namenode存放文件系统树及所有文件、目录的元数据。元数据持
 2）**Secondary Namenode** 
 Secondary节点定期合并主Namenode的namespace image和edit log， 避免edit log过大，通过创建检查点checkpoint来合并。它会维护一个合并后的namespace image副本， 可用于在Namenode完全崩溃时恢复数据。下图为Secondary Namenode的管理界面：
 
-<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/HDFS/20160715204229964.jpg" style="zoom: 33%;" />
+<img src="https://raw.githubusercontent.com/GSYfate/Markdown4Zhihu/master/Data/HDFS/20160715204229964-1608308213616.jpg" style="zoom: 33%;" />
 
 #### 3.4 DataNode
 
